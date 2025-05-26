@@ -4,6 +4,7 @@
 -- // Services & Variables
 
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local ContentProvider = game:GetService("ContentProvider")
@@ -12,6 +13,9 @@ local LocalPlayer = Players.LocalPlayer
 
 local PlayerModule = require(LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule"))
 local PlayerControls = PlayerModule:GetControls()
+
+local Bindables = ReplicatedStorage:WaitForChild("Bindables")
+local GameLoadedBindable: BindableEvent = Bindables:WaitForChild("GameLoaded")
 
 local LocalGui = LocalPlayer.PlayerGui
 local LoadingScreensGui: ScreenGui = LocalGui:WaitForChild("LoadingScreens")
@@ -108,3 +112,7 @@ for _, Element in pairs(ElementsTable) do
 		FadeTween:Play()
 	end
 end
+
+task.delay(1, function()
+    GameLoadedBindable:Fire()
+end)
