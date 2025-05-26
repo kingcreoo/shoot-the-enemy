@@ -19,14 +19,7 @@ local GameLoadingFrame: Frame = LoadingScreensGui:WaitForChild("GameLoad")
 
 local ScrollBarFrame:Frame = GameLoadingFrame:WaitForChild("Scrollbar")
 local Loadbar: ImageLabel = ScrollBarFrame:WaitForChild("BackgroundLeft")
-local BackgroundRight = ScrollBarFrame:WaitForChild("BackgroundRight")
 local LoadText: TextLabel = GameLoadingFrame:WaitForChild("LoadingText")
-local Frame = GameLoadingFrame:WaitForChild("Frame")
-local TextLabel1 = GameLoadingFrame:WaitForChild("TextLabel1")
-local TextLabel2 = GameLoadingFrame:WaitForChild("TextLabel2")
-local Label = GameLoadingFrame:WaitForChild("Label")
-local Shine = Label:WaitForChild("Shine")
-local TextLabel = Label:WaitForChild("TextLabel")
 
 local SkipButton: ImageButton = GameLoadingFrame:WaitForChild("Skip")
 local ItemText: TextLabel = GameLoadingFrame:WaitForChild("ItemText")
@@ -34,10 +27,8 @@ local ItemText: TextLabel = GameLoadingFrame:WaitForChild("ItemText")
 local WorkspaceDescendants = workspace:GetDescendants()
 
 
-local ElementsTable = {GameLoadingFrame, ScrollBarFrame, Loadbar, BackgroundRight, LoadText, Frame, TextLabel1, TextLabel2, Label, Shine, TextLabel, SkipButton, ItemText}
-for _, Halftone in pairs(Frame:WaitForChild("Halftones"):GetChildren()) do
-    table.insert(ElementsTable, Halftone)
-end
+local ElementsTable = GameLoadingFrame:GetDescendants()
+table.insert(ElementsTable, GameLoadingFrame)
 
 local FadeInfo = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
 
@@ -106,47 +97,14 @@ for _, Element in pairs(ElementsTable) do
 	if Element.ClassName == "TextLabel" then
 		local FadeTween = TweenService:Create(Element, FadeInfo, {TextTransparency = 1})
 		FadeTween:Play()
-		local FadeTween2 = TweenService:Create(Element:WaitForChild("UIStroke"), FadeInfo, {Transparency = 1})
-		FadeTween2:Play()
 	elseif Element.ClassName == "Frame" then
 		local FadeTween = TweenService:Create(Element, FadeInfo, {BackgroundTransparency = 1})
 		FadeTween:Play()
-	elseif Element.ClassName == "ImageLabel" then
+	elseif Element.ClassName == "ImageLabel" or Element.ClassName == "ImageButton" then
 		local FadeTween = TweenService:Create(Element, FadeInfo, {ImageTransparency = 1})
 		FadeTween:Play()
-    elseif Element.ClassName == "ImageButton" then
-		local FadeTween = TweenService:Create(Element, FadeInfo, {ImageTransparency = 1})
+    elseif Element.ClassName == "UIStroke" then
+		local FadeTween = TweenService:Create(Element, FadeInfo, {Transparency = 1})
 		FadeTween:Play()
-        local FadeTween2 = TweenService:Create(Element:WaitForChild("TextLabel"), FadeInfo, {TextTransparency = 1})
-        FadeTween2:Play()
-        local FadeTween3 = TweenService:Create(Element:WaitForChild("Shine"), FadeInfo, {ImageTransparency = 1})
-        FadeTween3:Play()
-        local FadeTween4 = TweenService:Create(Element:WaitForChild("TextLabel"):WaitForChild("UIStroke"), FadeInfo, {Transparency = 1})
-        FadeTween4:Play()
 	end
 end
-
-
---[[ Play loading animation
-local LoadbarTween: Tween = TweenService:Create(Loadbar, TweenInfo.new(5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {Size = UDim2.new(1,0,1,0), Position = UDim2.new(.5, 0, .5, 0)})
-LoadbarTween:Play()
-
--- Re-enable player's controls
-PlayerControls:Enable()
-
--- Play fade away animation
-for _, Element in pairs(ElementsTable) do
-    if Element.ClassName == "TextLabel" then
-        local FadeTween = TweenService:Create(Element, FadeInfo, {TextTransparency = 1})
-        FadeTween:Play()
-        local FadeTween2 = TweenService:Create(Element:WaitForChild("UIStroke"), FadeInfo, {Transparency = 1})
-        FadeTween2:Play()
-    elseif Element.ClassName == "Frame" then
-        local FadeTween = TweenService:Create(Element, FadeInfo, {BackgroundTransparency = 1})
-        FadeTween:Play()
-    elseif Element.ClassName == "ImageLabel" then
-        local FadeTween = TweenService:Create(Element, FadeInfo, {ImageTransparency = 1})
-        FadeTween:Play()
-    end
-end
---]]
