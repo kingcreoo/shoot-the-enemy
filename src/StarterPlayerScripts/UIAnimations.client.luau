@@ -12,6 +12,7 @@ local Bindables = ReplicatedStorage:WaitForChild("Bindables")
 local GameLoadedBindable: BindableEvent = Bindables:WaitForChild("GameLoaded")
 local OpenFrameBindable: BindableEvent = Bindables:WaitForChild("OpenFrame")
 local CloseFrameBindable: BindableEvent = Bindables:WaitForChild("CloseFrame")
+local CloseHUDBindable: BindableEvent = Bindables:WaitForChild("CloseHUD")
 
 local LocalPlayer = Players.LocalPlayer
 local LocalGui: PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -121,15 +122,20 @@ local function CloseHUD()
 end
 
 local function CloseFrame(FrameString: string, ForceClose: boolean)
-    local Frame = Frames[FrameString]
+    local FrameToClose
+    if FrameString then
+        FrameToClose = Frames[FrameString]
+    else
+        FrameToClose = ActiveFrame
+    end
 
     ActiveFrame = nil
 
-    local CloseTween = TweenService:Create(Frame, OpenInfo, {Size = UDim2.new(0,0,0,0)})
+    local CloseTween = TweenService:Create(FrameToClose, OpenInfo, {Size = UDim2.new(0,0,0,0)})
     CloseTween:Play()
 
     CloseTween.Completed:Connect(function()
-        Frame.Visible = false
+        FrameToClose.Visible = false
     end)
 
     if not HUDOpen then
@@ -177,8 +183,8 @@ local function OpenFrame(FrameString: string, ToCloseHUD: boolean, Force: boolea
         task.wait(.05)
     end
 
-    ActiveFrame = FrameString
     local Frame = Frames[FrameString]
+    ActiveFrame = Frame
 
     Frame.Size = UDim2.new(0,0,0,0)
     Frame.Visible = true
@@ -421,7 +427,7 @@ end)
 task.spawn(function()
     while true do
         task.wait(60)
-        
+
         if not HUDOpen then continue end
 
         for _, Element in pairs(HUDElements) do
@@ -446,6 +452,7 @@ end)
 GameLoadedBindable.Event:Connect(OpenHUD)
 OpenFrameBindable.Event:Connect(OpenFrame)
 CloseFrameBindable.Event:Connect(CloseFrame)
+CloseHUDBindable.Event:Connect(CloseHUD)
 for _, Value in pairs(LocalPlayer:WaitForChild("leaderstats"):GetChildren()) do
     Value.Changed:Connect(UpdateStats)
 end

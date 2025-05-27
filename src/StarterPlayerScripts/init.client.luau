@@ -6,9 +6,14 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local LevelControllerModule = require(Players.LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("Client"):WaitForChild("LevelController"))
+
 local Bindables = ReplicatedStorage:WaitForChild("Bindables")
 local OpenFrameBindable: BindableEvent = Bindables:WaitForChild("OpenFrame")
 local CloseFrameBindable: BindableEvent = Bindables:WaitForChild("CloseFrame")
+
+local LevelManagementEvents = ReplicatedStorage:WaitForChild("LevelManagement")
+local GenerateEvent: RemoteEvent = LevelManagementEvents:WaitForChild("Generate")
 
 local ProximityPromptsFolder = workspace:WaitForChild("ProximityPrompts")
 local TactileWorldProximityPrompt: ProximityPrompt = ProximityPromptsFolder:WaitForChild("TactileWorld"):WaitForChild("Prompt")
@@ -16,7 +21,13 @@ local TactileWorldProximityPrompt: ProximityPrompt = ProximityPromptsFolder:Wait
 local ProximityPrompts = {TactileWorldProximityPrompt}
 local PlayPromptDebounce = false
 
+local CurrentLevel
+
 -- // Functions
+local function GenerateLevel(World: string, Level: string, Area: string, StartEntities: table)
+    CurrentLevel = LevelControllerModule.New(World, Level, Area, StartEntities)
+    CurrentLevel:Initialize()
+end
 
 local function OpenLevelSelector(WorldName: string)
     if PlayPromptDebounce then return end
@@ -40,3 +51,4 @@ end)
 TactileWorldProximityPrompt.PromptHidden:Connect(function()
     CloseLevelSelector("TactileWorld")
 end)
+GenerateEvent.OnClientEvent:Connect(GenerateLevel)
