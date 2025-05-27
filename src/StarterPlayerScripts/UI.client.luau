@@ -9,13 +9,20 @@ local TweenService = game:GetService("TweenService")
 
 local Bindables = ReplicatedStorage:WaitForChild("Bindables")
 local GameLoadedBindable: BindableEvent = Bindables:WaitForChild("GameLoaded")
+local OpenFrameBindable: BindableEvent = Bindables:WaitForChild("OpenFrame")
+local CloseFrameBindable: BindableEvent = Bindables:WaitForChild("CloseFrame")
 
 local LocalPlayer = Players.LocalPlayer
 local LocalGui: PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
+local OpenInfo = TweenInfo.new(.2, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut)
+
 
 -- // Defining our GUI
 local HUD: ScreenGui = LocalGui:WaitForChild("HUD")
+local FramesGui: ScreenGui = LocalGui:WaitForChild("Frames")
+
+local TactileWorldFrame: Frame = FramesGui:WaitForChild("TactileWorld")
 
 local StatsDisplay: Folder = HUD:WaitForChild("StatsDisplay")
 local SideMenu: Folder = HUD:WaitForChild("SideMenu")
@@ -38,6 +45,11 @@ local HUDButtonsOscillation = {CodesButton, SettingsButton, OpsContainer, SkinsC
 local HUDButtonsPulse = {StoreContainer}
 local HUDButtonsSideOscillation = {GoldContainer, GemContainer}
 
+local HUDOpen = nil
+
+local Frames = {["TactileWorld"] = TactileWorldFrame}
+local ActiveFrame = nil
+
 -- // Functions
 local function OpenHUD()
     for _, Element in pairs(HUDElements) do
@@ -45,6 +57,7 @@ local function OpenHUD()
     end
 
     HUD.Enabled = true
+    HUDOpen = true
 
     for _, Element in pairs(HUDElements) do
         task.spawn(function()
@@ -55,6 +68,69 @@ local function OpenHUD()
         task.wait(.2)
         continue
     end
+end
+
+local function CloseHUD()
+    HUDOpen = false
+
+    for _, Element in pairs(HUDElements) do
+        task.spawn(function()
+            local SuckTween = TweenService:Create(Element, TweenInfo.new(.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0,0,0,0)})
+            SuckTween:Play()
+        end)
+
+        task.wait(.075)
+        continue
+    end
+end
+
+local function CloseFrame(FrameString: string, ForceClose: boolean)
+    local Frame = Frames[FrameString]
+
+    ActiveFrame = nil
+
+    local CloseTween = TweenService:Create(Frame, OpenInfo, {Size = UDim2.new(0,0,0,0)})
+    CloseTween:Play()
+
+    CloseTween.Completed:Connect(function()
+        Frame.Visible = false
+    end)
+
+    if not HUDOpen then
+        if ForceClose then return end
+
+        OpenHUD()
+    end
+end
+
+local function OpenFrame(FrameString: string, ToCloseHUD: boolean, Force: boolean)
+    if ActiveFrame ~= nil and not Force then return end
+    if ActiveFrame == FrameString then return end
+
+    if ActiveFrame ~= nil then
+        CloseFrame(ActiveFrame, true)
+        task.wait(.2)
+    end
+
+    if ToCloseHUD then
+        if not HUDOpen then return end
+
+        task.spawn(function()
+            CloseHUD()
+        end)
+        task.wait(.05)
+    end
+
+    ActiveFrame = FrameString
+    local Frame = Frames[FrameString]
+
+    print(Frame.Name)
+
+    Frame.Size = UDim2.new(0,0,0,0)
+    Frame.Visible = true
+
+    local OpenTween = TweenService:Create(Frame, OpenInfo, {Size = Frame:GetAttribute("Size")})
+    OpenTween:Play()
 end
 
 -- // Animations
@@ -274,3 +350,5 @@ end
 
 -- // Events  & Handling
 GameLoadedBindable.Event:Connect(OpenHUD)
+OpenFrameBindable.Event:Connect(OpenFrame)
+CloseFrameBindable.Event:Connect(CloseFrame)
