@@ -9,6 +9,7 @@ local ServerScriptService = game:GetService("ServerScriptService")
 local Data = require(ServerScriptService:WaitForChild("Server"):WaitForChild("Data"))
 
 local Events = ReplicatedStorage:WaitForChild("Events")
+local PlayLevelEvent: RemoteEvent = Events:WaitForChild("PlayLevel")
 
 local Functions = ReplicatedStorage:WaitForChild("Functions")
 local RequestDataFunction: RemoteFunction = Functions:WaitForChild("RequestData")
@@ -31,6 +32,16 @@ local function InitializeData(Player: Player, PlayerData: table)
         Stat.Value = Value
         Stat.Parent = leaderstats
     end
+
+    local PlayingLevel = Instance.new("BoolValue")
+    PlayingLevel.Parent = Player
+    PlayingLevel.Name = "PlayingLevel"
+    PlayingLevel.Value = false
+
+    local PlayingDebounce = Instance.new("BoolValue")
+    PlayingDebounce.Parent = "Player"
+    PlayingDebounce.Name = "PlayingDebounce"
+    PlayingDebounce.Value = false
 end
 
 local function SelectSpawnPoint(Character)
@@ -82,6 +93,42 @@ local function OnPlayerRemoving(Player)
     Data.Remove(Player)
 end
 
+local function CreateLevel(Player: Player, World: string, Level: string)
+    local LevelController = LevelControllerModule.Create(Player, World, Level)
+end
+
+local function PlayLevelRequest(Player: Player, World: string, Level: string)
+    -- Check if player is already playing a level
+    if Player:WaitForChild("PlayingLevel").Value == true then
+        warn("Player is currently playing a level. Play request cancelled.")
+        -- TODO warn player
+
+        return
+    end
+
+    -- Check if player has too recently started a level
+    if Player:WaitForChild("PlayingDebounce").Value == true then
+        warn("Player has started a level to recently. Play request cancelled.")
+        -- TODO warn player
+
+        return
+    end
+    
+    local PlayerData: table = Data:Get(Player)
+
+    -- Check if player has unlocked this level
+    local LevelNumber = tonumber(Level:match('%d+'))
+    if LevelNumber ~= 1 then
+        local PreviousLevel = "Level" .. tostring(LevelNumber-1)
+        if PlayerData["Worlds"][World][PreviousLevel] == 0 then
+            warn("Player has not unlocked this level yet. Play request cancelled.")
+
+            -- TODO warn player
+        end
+    end
+
+end
+
 RequestDataFunction.OnServerInvoke = function(Player: Player)
     -- TODO write server checks here to make sure data request is valid
     return Data.Get(Player)
@@ -90,3 +137,4 @@ end
 -- // Events & Handling
 Players.PlayerAdded:Connect(OnPlayerAdded)
 Players.PlayerRemoving:Connect(OnPlayerRemoving)
+PlayLevelEvent.OnServerEvent:Connect(PlayLevelRequest)
