@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local Data = require(ServerScriptService:WaitForChild("Server"):WaitForChild("Data"))
+local LevelControllerModule = require(ServerScriptService:WaitForChild("Server"):WaitForChild("LevelController"))
 
 local Events = ReplicatedStorage:WaitForChild("Events")
 local PlayLevelEvent: RemoteEvent = Events:WaitForChild("PlayLevel")
@@ -127,6 +128,8 @@ local function PlayLevelRequest(Player: Player, World: string, Level: string)
         end
     end
 
+    -- Play request has passed all checks. Create level.
+    CreateLevel(Player, World, Level)
 end
 
 RequestDataFunction.OnServerInvoke = function(Player: Player)
