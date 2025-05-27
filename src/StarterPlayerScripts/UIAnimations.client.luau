@@ -1,5 +1,5 @@
--- // UI Handler, written by KingCreoo on 5-26-2025
--- // Handles UI :)
+-- // UI animations, written by KingCreoo on 5-26-2025
+-- // Handles UI animations :)
 
 -- // Services, variables, modules
 
@@ -420,6 +420,10 @@ end)
 -- Idle side menu animation
 task.spawn(function()
     while true do
+        task.wait(60)
+        
+        if not HUDOpen then continue end
+
         for _, Element in pairs(HUDElements) do
             task.wait(.15)
             local OriginSize = Element:GetAttribute("Size")
@@ -435,8 +439,6 @@ task.spawn(function()
 
             continue
         end
-
-        task.wait(60)
     end
 end)
 
