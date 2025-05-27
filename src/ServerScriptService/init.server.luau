@@ -10,6 +10,9 @@ local Data = require(ServerScriptService:WaitForChild("Server"):WaitForChild("Da
 
 local Events = ReplicatedStorage:WaitForChild("Events")
 
+local Functions = ReplicatedStorage:WaitForChild("Functions")
+local RequestDataFunction: RemoteFunction = Functions:WaitForChild("RequestData")
+
 local SpawnsFolder = workspace:WaitForChild("Spawns")
 local Spawns = SpawnsFolder:GetChildren()
 
@@ -77,6 +80,11 @@ end
 
 local function OnPlayerRemoving(Player)
     Data.Remove(Player)
+end
+
+RequestDataFunction.OnServerInvoke = function(Player: Player)
+    -- TODO write server checks here to make sure data request is valid
+    return Data.Get(Player)
 end
 
 -- // Events & Handling
