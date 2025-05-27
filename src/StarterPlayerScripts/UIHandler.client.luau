@@ -57,3 +57,7 @@ task.delay(1, function()
         World:Update(PlayerData)
     end
 end)
+
+for _, World in pairs(LevelSelectors) do
+    World:WatchDog()
+end

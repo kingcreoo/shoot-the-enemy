@@ -40,7 +40,7 @@ local function InitializeData(Player: Player, PlayerData: table)
     PlayingLevel.Value = false
 
     local PlayingDebounce = Instance.new("BoolValue")
-    PlayingDebounce.Parent = "Player"
+    PlayingDebounce.Parent = Player
     PlayingDebounce.Name = "PlayingDebounce"
     PlayingDebounce.Value = false
 end
@@ -96,6 +96,7 @@ end
 
 local function CreateLevel(Player: Player, World: string, Level: string)
     local LevelController = LevelControllerModule.Create(Player, World, Level)
+    LevelController:Initialize()
 end
 
 local function PlayLevelRequest(Player: Player, World: string, Level: string)
