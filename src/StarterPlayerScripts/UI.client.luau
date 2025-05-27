@@ -63,6 +63,11 @@ local Frames = {["TactileWorld"] = TactileWorldFrame}
 local ActiveFrame = nil
 
 -- // Functions
+local function UpdateStats()
+    GoldContainer:WaitForChild("TextLabel").Text = LocalPlayer:WaitForChild("leaderstats"):WaitForChild("Gold").Value
+    GemContainer:WaitForChild("TextLabel").Text = LocalPlayer:WaitForChild("leaderstats"):WaitForChild("Gems").Value
+end
+
 local function OpenHUD()
     for _, Element in pairs(HUDElements) do
         Element.Size = UDim2.new(0,0,0,0)
@@ -439,3 +444,8 @@ end)
 GameLoadedBindable.Event:Connect(OpenHUD)
 OpenFrameBindable.Event:Connect(OpenFrame)
 CloseFrameBindable.Event:Connect(CloseFrame)
+for _, Value in pairs(LocalPlayer:WaitForChild("leaderstats"):GetChildren()) do
+    Value.Changed:Connect(UpdateStats)
+end
+
+task.delay(1, UpdateStats)

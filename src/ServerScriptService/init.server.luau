@@ -2,9 +2,11 @@
 -- // Manages the server's basic code and communication
 
 -- // Services, variables, and modules
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
+
+local Data = require(ServerScriptService:WaitForChild("Server"):WaitForChild("Data"))
 
 local Events = ReplicatedStorage:WaitForChild("Events")
 
@@ -13,9 +15,23 @@ local Spawns = SpawnsFolder:GetChildren()
 
 -- // Functions
 
-local function OnPlayerAdded(Player)
+local function InitializeData(Player: Player, PlayerData: table)
+    local leaderstats = Instance.new("Folder")
+    leaderstats.Parent = Player
+    leaderstats.Name = "leaderstats"
+
+    for Name, Value in pairs(PlayerData["leaderstats"]) do
+        local String = type(Value) .. "Value"
+
+        local Stat = Instance.new(string.upper(string.sub(String, 1, 1)) .. string.sub(String, 2, -1))
+        Stat.Name = Name
+        Stat.Value = Value
+        Stat.Parent = leaderstats
+    end
+end
+
+local function SelectSpawnPoint(Character)
     local Spawned = false
-    local Character = Player.Character or Player.CharacterAdded:Wait()
 
     -- Teleport player to an open spawn point
     for _, Spawn: Part in pairs(Spawns) do
@@ -40,5 +56,29 @@ local function OnPlayerAdded(Player)
     end
 end
 
+local function OnPlayerAdded(Player)
+    local Character = Player.Character or Player.CharacterAdded:Wait()
+
+    -- Teleport player to a spawn point
+    SelectSpawnPoint(Character)
+
+    -- Handle loading player's data (or new player)
+    local PlayerData, NewPlayer = Data.Initialize(Player)
+    if NewPlayer then
+        print(Player.Name .. " has joined the game. They are a new player. Their data has been initialized with default data.")
+    else
+        print(Player.Name .. " has joined the game. They are a returning player. Their data:")
+        print(PlayerData)
+    end
+
+    -- Initialize player's leaderstats
+    InitializeData(Player, PlayerData)
+end
+
+local function OnPlayerRemoving(Player)
+    Data.Remove(Player)
+end
+
 -- // Events & Handling
 Players.PlayerAdded:Connect(OnPlayerAdded)
+Players.PlayerRemoving:Connect(OnPlayerRemoving)
