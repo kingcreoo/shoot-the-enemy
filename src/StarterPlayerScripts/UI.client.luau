@@ -6,6 +6,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local Lighting: Lighting = game:GetService("Lighting")
 
 local Bindables = ReplicatedStorage:WaitForChild("Bindables")
 local GameLoadedBindable: BindableEvent = Bindables:WaitForChild("GameLoaded")
@@ -14,6 +15,9 @@ local CloseFrameBindable: BindableEvent = Bindables:WaitForChild("CloseFrame")
 
 local LocalPlayer = Players.LocalPlayer
 local LocalGui: PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+local GUIBlur: BlurEffect = Lighting:WaitForChild("GUIBlur")
+local BlurOn = false
 
 local OpenInfo = TweenInfo.new(.2, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut)
 
@@ -78,6 +82,25 @@ local function OpenHUD()
     end
 end
 
+local function OpenHUDFast()
+    for _, Element in pairs(HUDElements) do
+        Element.Size = UDim2.new(0,0,0,0)
+    end
+
+    HUD.Enabled = true
+    HUDOpen = true
+
+    for _, Element in pairs(HUDElements) do
+        task.spawn(function()
+            local PopTween = TweenService:Create(Element, TweenInfo.new(.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = Element:GetAttribute("Size")})
+            PopTween:Play()
+        end)
+
+        task.wait(.075)
+        continue
+    end
+end
+
 local function CloseHUD()
     HUDOpen = false
 
@@ -107,7 +130,20 @@ local function CloseFrame(FrameString: string, ForceClose: boolean)
     if not HUDOpen then
         if ForceClose then return end
 
-        OpenHUD()
+        task.spawn(function()
+            OpenHUDFast()
+        end)
+    end
+
+    if BlurOn then
+        if ForceClose then return end
+
+        local BlurTween = TweenService:Create(GUIBlur, TweenInfo.new(.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {Size = 0})
+        BlurTween:Play()
+        BlurTween.Completed:Connect(function()
+            BlurOn = false
+            GUIBlur.Enabled = false
+        end)
     end
 end
 
@@ -118,6 +154,13 @@ local function OpenFrame(FrameString: string, ToCloseHUD: boolean, Force: boolea
     if ActiveFrame ~= nil then
         CloseFrame(ActiveFrame, true)
         task.wait(.2)
+    end
+
+    if not BlurOn then
+        BlurOn = true
+        GUIBlur.Enabled = true
+        local BlurTween = TweenService:Create(GUIBlur, TweenInfo.new(.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {Size = 24})
+        BlurTween:Play()
     end
 
     if ToCloseHUD then
