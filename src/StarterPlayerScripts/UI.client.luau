@@ -17,6 +17,14 @@ local LocalGui: PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 local OpenInfo = TweenInfo.new(.2, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut)
 
+local StoreEmojis = {
+    "rbxassetid://104230400329278",
+    "rbxassetid://115845499094871",
+    "rbxassetid://131785217527372",
+    "rbxassetid://98869560137662",
+    "rbxassetid://137193933072710"
+}
+
 
 -- // Defining our GUI
 local HUD: ScreenGui = LocalGui:WaitForChild("HUD")
@@ -123,8 +131,6 @@ local function OpenFrame(FrameString: string, ToCloseHUD: boolean, Force: boolea
 
     ActiveFrame = FrameString
     local Frame = Frames[FrameString]
-
-    print(Frame.Name)
 
     Frame.Size = UDim2.new(0,0,0,0)
     Frame.Visible = true
@@ -297,56 +303,94 @@ end
 -- Pulse & enter animation
 for _, Target in pairs(HUDButtonsPulse) do
     -- Original size (assuming original scale is 0.15 for X and Y, offset is 0)
-local OriginalScaleX = 0.15
-local OriginalScaleY = 0.15
-local OriginalSize = UDim2.new(OriginalScaleX, 0, OriginalScaleY, 0)
+    local OriginalScaleX = 0.15
+    local OriginalScaleY = 0.15
+    local OriginalSize = UDim2.new(OriginalScaleX, 0, OriginalScaleY, 0)
 
--- Pulse size adds 10 pixels offset on both axes (you can adjust)
-local PulseSize = UDim2.new(OriginalScaleX, 10, OriginalScaleY, 10)
+    -- Pulse size adds 10 pixels offset on both axes (you can adjust)
+    local PulseSize = UDim2.new(OriginalScaleX, 10, OriginalScaleY, 10)
 
-local PulseTweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
-local ShrinkTweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local PulseTweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+    local ShrinkTweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
-local PulseTween = nil
-local ShrinkTween = nil
-local IsHovering = false
+    local PulseTween = nil
+    local ShrinkTween = nil
+    local IsHovering = false
 
-local function StartPulse()
-	if PulseTween then
-		PulseTween:Cancel()
-		PulseTween = nil
-	end
-	PulseTween = TweenService:Create(Target, PulseTweenInfo, {Size = PulseSize})
-	PulseTween:Play()
+    local function StartPulse()
+        if PulseTween then
+            PulseTween:Cancel()
+            PulseTween = nil
+        end
+        PulseTween = TweenService:Create(Target, PulseTweenInfo, {Size = PulseSize})
+        PulseTween:Play()
+    end
+
+    local function StopPulse()
+        if PulseTween then
+            PulseTween:Cancel()
+            PulseTween = nil
+        end
+        -- Start a smooth shrink tween back to original size
+        if ShrinkTween then
+            ShrinkTween:Cancel()
+            ShrinkTween = nil
+        end
+        ShrinkTween = TweenService:Create(Target, ShrinkTweenInfo, {Size = OriginalSize})
+        ShrinkTween:Play()
+    end
+
+    -- Hover events
+    Target.MouseEnter:Connect(function()
+        if IsHovering then return end
+        IsHovering = true
+        StartPulse()
+    end)
+
+    Target.MouseLeave:Connect(function()
+        IsHovering = false
+        StopPulse()
+    end)
+
 end
 
-local function StopPulse()
-	if PulseTween then
-		PulseTween:Cancel()
-		PulseTween = nil
-	end
-	-- Start a smooth shrink tween back to original size
-	if ShrinkTween then
-		ShrinkTween:Cancel()
-		ShrinkTween = nil
-	end
-	ShrinkTween = TweenService:Create(Target, ShrinkTweenInfo, {Size = OriginalSize})
-	ShrinkTween:Play()
-end
+-- Rotate icons for store animation
+task.spawn(function()
+    local Index = 2
+    while true do
+        TweenService:Create(StoreContainer:WaitForChild("ImageLabel"), TweenInfo.new(1.5), {ImageTransparency = 1}):Play()
+        task.wait(1.5)
 
--- Hover events
-Target.MouseEnter:Connect(function()
-	if IsHovering then return end
-	IsHovering = true
-	StartPulse()
+        StoreContainer:WaitForChild("ImageLabel").Image = StoreEmojis[Index]
+        TweenService:Create(StoreContainer:WaitForChild("ImageLabel"), TweenInfo.new(1.5), {ImageTransparency = 0}):Play()
+
+        Index = Index % #StoreEmojis +1
+        task.wait(20)
+    end
 end)
 
-Target.MouseLeave:Connect(function()
-	IsHovering = false
-	StopPulse()
-end)
+-- Idle side menu animation
+task.spawn(function()
+    while true do
+        for _, Element in pairs(HUDElements) do
+            task.wait(.15)
+            local OriginSize = Element:GetAttribute("Size")
+            local NewSize = OriginSize + UDim2.new(0,25,0,25)
 
-end
+            local ScaleTween = TweenService:Create(Element, TweenInfo.new(.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = NewSize})
+            ScaleTween:Play()
+
+            task.delay(.15, function()
+                local ReturnTween = TweenService:Create(Element, TweenInfo.new(.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = OriginSize})
+                ReturnTween:Play()
+            end)
+
+            continue
+        end
+
+        task.wait(60)
+    end
+end)
 
 -- // Events  & Handling
 GameLoadedBindable.Event:Connect(OpenHUD)
