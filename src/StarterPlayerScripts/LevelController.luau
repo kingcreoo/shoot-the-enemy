@@ -44,8 +44,7 @@ function LevelController:Initialize()
     LocalPlayerControls:Disable()
 
     -- Close all HUD items and frames & start loading screen
-    CloseHUDBindable:Fire()
-    CloseFrameBindable:Fire()
+    CloseFrameBindable:Fire(nil, false, true)
 
     local LoadingScreen: Frame = LocalGui:WaitForChild("LoadingScreens"):WaitForChild(self.World)
     local Loadbar: ImageLabel = LoadingScreen:WaitForChild("Scrollbar"):WaitForChild("BackgroundLeft")
@@ -62,11 +61,38 @@ function LevelController:Initialize()
     end)
 
     task.delay(2.5, function()
-        local FadeoutTween = TweenService:Create(LoadingScreen, TweenInfo.new(1), {Transparency = 1})
-        FadeoutTween:Play()
+        local Elements = LoadingScreen:GetDescendants()
+        table.insert(Elements, LoadingScreen)
+        
+        for _, Element in pairs(Elements) do
+            if Element.ClassName == "Frame" then
+                local FadeoutTween = TweenService:Create(Element, TweenInfo.new(1), {BackgroundTransparency = 1})
+                FadeoutTween:Play()
+            elseif Element.ClassName == "TextLabel" then
+                local FadeoutTween = TweenService:Create(Element, TweenInfo.new(1), {TextTransparency = 1})
+                FadeoutTween:Play()
+            elseif Element.ClassName == "ImageLabel" then
+                local FadeoutTween = TweenService:Create(Element, TweenInfo.new(1), {ImageTransparency = 1})
+                FadeoutTween:Play()
+            elseif Element.ClassName == "UIStroke" then
+                local FadeoutTween = TweenService:Create(Element, TweenInfo.new(1), {Transparency = 1})
+                FadeoutTween:Play()
+            end
+        end
 
-        FadeoutTween.Completed:Connect(function()
+        task.delay(1.05, function()
             LoadingScreen.Visible = false
+            for _, Element in pairs(Elements) do
+                if Element.ClassName == "Frame" then
+                    Element.BackgroundTransparency = 0
+                elseif Element.ClassName == "TextLabel" then
+                    Element.TextTransparency = 0
+                elseif Element.ClassName == "ImageLabel" then
+                    Element.ImageTransparency = 0
+                elseif Element.ClassName == "UIStroke" then
+                    Element.Transparency = 0
+                end
+            end
         end)
     end)
 

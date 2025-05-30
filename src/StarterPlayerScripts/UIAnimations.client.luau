@@ -89,6 +89,7 @@ local function OpenHUD()
 end
 
 local function OpenHUDFast()
+    print('open')
     for _, Element in pairs(HUDElements) do
         Element.Size = UDim2.new(0,0,0,0)
     end
@@ -121,7 +122,7 @@ local function CloseHUD()
     end
 end
 
-local function CloseFrame(FrameString: string, ForceClose: boolean)
+local function CloseFrame(FrameString: string, ForceClose: boolean, ToCloseHUD: boolean)
     local FrameToClose
     if FrameString then
         FrameToClose = Frames[FrameString]
@@ -138,16 +139,18 @@ local function CloseFrame(FrameString: string, ForceClose: boolean)
         FrameToClose.Visible = false
     end)
 
-    if not HUDOpen then
-        if ForceClose then return end
-
+    if not HUDOpen and ToCloseHUD == false then
         task.spawn(function()
             OpenHUDFast()
         end)
     end
 
+    if ToCloseHUD then
+        CloseHUD()
+    end
+
     if BlurOn then
-        if ForceClose then return end
+        if ForceClose == true then return end
 
         local BlurTween = TweenService:Create(GUIBlur, TweenInfo.new(.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {Size = 0})
         BlurTween:Play()
