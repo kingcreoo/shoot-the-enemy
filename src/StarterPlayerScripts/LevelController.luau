@@ -10,12 +10,14 @@ LevelController.__index = LevelController
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 local LocalGui: PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local LocalPlayerScripts: PlayerScripts = LocalPlayer:WaitForChild("PlayerScripts")
 local LocalPlayerModule = require(LocalPlayerScripts:WaitForChild("PlayerModule"))
 local LocalPlayerControls = LocalPlayerModule:GetControls()
+local Mouse = LocalPlayer:GetMouse()
 
 local LevelManagementEvents = ReplicatedStorage:WaitForChild("LevelManagement")
 local StartLevelEvent: RemoteEvent = LevelManagementEvents:WaitForChild("Start")
@@ -29,12 +31,13 @@ local Lobby = workspace:WaitForChild("Lobby Build")
 
 -- // Module functions
 
-function LevelController.New(World: string, Level: string, Area: string, StartEntities: table)
+function LevelController.New(World: string, Level: string, Area: string, StartEntities: table, Orientation: string)
     local self = setmetatable({}, LevelController)
     self.World = World
     self.Level = Level
     self.Area = Area
     self.StartEntities = StartEntities
+    self.Orientation = Orientation
 
     return self
 end
@@ -63,7 +66,7 @@ function LevelController:Initialize()
     task.delay(2.5, function()
         local Elements = LoadingScreen:GetDescendants()
         table.insert(Elements, LoadingScreen)
-        
+
         for _, Element in pairs(Elements) do
             if Element.ClassName == "Frame" then
                 local FadeoutTween = TweenService:Create(Element, TweenInfo.new(1), {BackgroundTransparency = 1})
@@ -101,6 +104,10 @@ function LevelController:Initialize()
     Level:SetPrimaryPartCFrame(ReplicatedStorage:WaitForChild("PlayAreas"):WaitForChild(self.Area).CFrame)
     Level.Name = "ActiveLevel"
     Level.Parent = workspace
+    self.LevelModel = Level
+
+    -- Generate & load player's team (but don't enable controls yet)
+    self:GenerateTeam()
 
     -- Deload lobby
     Lobby.Parent = ReplicatedStorage
@@ -116,7 +123,70 @@ function LevelController:Initialize()
     end)
 end
 
+function LevelController:AlignTeam(Target: CFrame)
+    
+end
+
+function LevelController:GenerateTeam()
+    -- TODO generate selected skin & operator
+    self.Skin = --[[SelectedSkin]] "Default"
+
+    local CenterPart = Instance.new("Part")
+    CenterPart.Transparency = 1
+    CenterPart.Anchored = true
+    CenterPart.CFrame = self.LevelModel:WaitForChild("Start").CFrame
+    CenterPart.Name = "CenterPart"
+    CenterPart.Parent = self.LevelModel
+    self.CenterPart = CenterPart
+
+    local ActiveTeam = Instance.new("Folder")
+    ActiveTeam.Name = "ActiveTeam"
+    ActiveTeam.Parent = self.LevelModel
+    self.ActiveTeam = ActiveTeam
+
+    for _ = 1, self.StartEntities["Team"] do
+        local Soldier = ReplicatedStorage:WaitForChild("Skins"):WaitForChild(self.Skin):Clone()
+        Soldier.Parent = ActiveTeam
+    end
+
+    local SoldierNumber = 1
+    for _, Soldier in pairs(ActiveTeam:GetChildren()) do
+        Soldier:SetAttribute("Offset", self.Orientation[SoldierNumber])
+        SoldierNumber += 1
+    end
+
+    for _, Soldier in pairs(ActiveTeam:GetChildren()) do
+        Soldier:SetPrimaryPartCFrame(self.CenterPart.CFrame + Soldier:GetAttribute("Offset"))
+    end
+
+    -- TODO align team
+    -- LevelController:AlignTeam()
+end
+
 function LevelController:Start()
+    -- Generate controls
+    RunService.RenderStepped:Connect(function()
+        local MouseHit = Mouse.Hit
+
+        -- Apply movement limits
+        local TargetX = math.clamp(MouseHit.Position.X, (self.LevelModel.Start.Position.X - 20), (self.LevelModel.Start.Position.X + 20))
+
+        for _, Soldier in pairs(self.ActiveTeam:GetChildren()) do
+            -- Lerp to the target position
+            local SoldierTargetX = TargetX + Soldier:GetAttribute("Offset").X
+
+            local TargetPosition = Soldier.PrimaryPart.Position
+            TargetPosition = Vector3.new(
+                TargetPosition.X + (SoldierTargetX - TargetPosition.X) * .1,
+                TargetPosition.Y,
+                TargetPosition.Z
+            )
+
+            --local SoldierPosition = TargetPosition + Soldier:GetAttribute("Offset")
+
+            Soldier:SetPrimaryPartCFrame(CFrame.new(TargetPosition))
+        end
+    end)
 end
 
 -- // Return module

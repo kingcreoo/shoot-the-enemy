@@ -24,8 +24,8 @@ local PlayPromptDebounce = false
 local CurrentLevel
 
 -- // Functions
-local function GenerateLevel(World: string, Level: string, Area: string, StartEntities: table)
-    CurrentLevel = LevelControllerModule.New(World, Level, Area, StartEntities)
+local function GenerateLevel(World: string, Level: string, Area: string, StartEntities: table, Orientation: string)
+    CurrentLevel = LevelControllerModule.New(World, Level, Area, StartEntities, Orientation)
     CurrentLevel:Initialize()
 end
 

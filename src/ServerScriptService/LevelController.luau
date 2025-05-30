@@ -53,7 +53,7 @@ function LevelController:Initialize()
     self.Area = SelectVacantPlayArea()
 
     -- Communicate to client that level is starting, pass along what to generate and where.
-    GenerateEvent:FireClient(self.Player, self.World, self.Level, self.Area.Name, SERVER_SETTINGS["LEVEL_INFO"][self.World][self.Level]["StartEntities"])
+    GenerateEvent:FireClient(self.Player, self.World, self.Level, self.Area.Name, SERVER_SETTINGS["LEVEL_INFO"][self.World][self.Level]["StartEntities"], SERVER_SETTINGS["LEVEL_INFO"][self.World][self.Level]["Orientation"])
 
     -- Teleport player to limbo
     task.delay(1, function()
@@ -61,7 +61,9 @@ function LevelController:Initialize()
     end)
 
     -- Wait for client to catch up, then start game
-    task.wait(4)
+    task.wait(5)
+    print('start in 1')
+    task.wait(1)
     StartEvent:FireClient(self.Player, SERVER_SETTINGS["LEVEL_INFO"][self.World][self.Level]["EntitySequence"])
 
 end

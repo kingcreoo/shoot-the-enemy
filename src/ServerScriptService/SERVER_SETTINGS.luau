@@ -12,10 +12,20 @@ SERVER_SETTINGS.LEVEL_INFO = {
             ["Type"] = "Defense",
             ["TotalTime"] = 90,
             ["StartEntities"] = {
+                ["Team"] = 5,
+                ["Enemies"] = {
 
+                }
             },
             ["EntitySequence"] = {
 
+            },
+            ["Orientation"] = {
+                [1] = Vector3.new(5,0,-3),
+                [2] = Vector3.new(-5,0,-3),
+                [3] = Vector3.new(0,0,4),
+                [4] = Vector3.new(10,0,-6),
+                [5] = Vector3.new(-10,0,-6)
             }
         }
     }
