@@ -80,6 +80,10 @@ function LevelController:Initialize()
     Lobby.Parent = ReplicatedStorage
 
     -- Change player's camera
+    local Camera = workspace.CurrentCamera
+
+    Camera.CameraType = Enum.CameraType.Scriptable
+    Camera.CFrame = Level:WaitForChild("CameraReference").CFrame
 
     StartLevelEvent.OnClientEvent:Connect(function()
         self:Start()
