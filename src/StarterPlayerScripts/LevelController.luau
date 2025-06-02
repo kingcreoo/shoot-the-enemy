@@ -12,12 +12,16 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 
+local Settings = require(ReplicatedStorage:WaitForChild("Settings"))
+
 local LocalPlayer = Players.LocalPlayer
 local LocalGui: PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local LocalPlayerScripts: PlayerScripts = LocalPlayer:WaitForChild("PlayerScripts")
 local LocalPlayerModule = require(LocalPlayerScripts:WaitForChild("PlayerModule"))
 local LocalPlayerControls = LocalPlayerModule:GetControls()
 local Mouse = LocalPlayer:GetMouse()
+
+local Animations = ReplicatedStorage:WaitForChild("Animations")
 
 local LevelManagementEvents = ReplicatedStorage:WaitForChild("LevelManagement")
 local StartLevelEvent: RemoteEvent = LevelManagementEvents:WaitForChild("Start")
@@ -129,15 +133,47 @@ end
 function LevelController:AddSoldier()
     local Soldier = ReplicatedStorage:WaitForChild("Skins"):WaitForChild(self.Skin):Clone()
     Soldier:SetAttribute("Offset", self.Orientation[#self.TeamFolder:GetChildren()+1])
-    Soldier:SetPrimaryPartCFrame(self.CenterPart.CFrame + self.Orientation[#self.TeamFolder:GetChildren()+1])
+    Soldier:SetPrimaryPartCFrame((self.CenterPart.CFrame + self.Orientation[#self.TeamFolder:GetChildren()+1]) * CFrame.Angles(0, math.rad(180), 0))
     Soldier.Parent = self.TeamFolder
+end
+
+function LevelController:Equip(Weapon: string)
+    for _, Soldier in pairs(self.TeamFolder:GetChildren()) do
+        local OldWeapon = Soldier:FindFirstChild("Weapon")
+        if OldWeapon then
+            OldWeapon:Destroy()
+        end
+
+        local Animator: Animator = Soldier:WaitForChild("AnimationController"):WaitForChild("Animator")
+        local PlayingAnimations = Animator:GetPlayingAnimationTracks()
+        for _, Animation in pairs(PlayingAnimations) do
+            if Animation.Name:match("Idle$") then
+                Animation:Stop()
+            end
+        end
+
+        local NewWeapon = ReplicatedStorage:WaitForChild("Weapons"):WaitForChild(Weapon):Clone()
+        NewWeapon.Parent = Soldier
+        local Handle = NewWeapon:WaitForChild("Handle")
+        local Joint = Instance.new("Motor6D")
+        Joint.Parent = Handle
+        Joint.Part0 = Soldier:WaitForChild("Right Arm")
+        Joint.Part1 = Handle
+
+        Joint.C0 = Settings["WEAPON_DATA"][Weapon]["C0"]
+        Joint.C1 = Settings["WEAPON_DATA"][Weapon]["C1"]
+
+        local IdleAnimation = Animations:WaitForChild(Weapon .. "Idle")
+        local Track = Animator:LoadAnimation(IdleAnimation)
+        Track:Play()
+    end
 end
 
 function LevelController:AlignTeam()
     local SoldierNumber = 1
     for _, Soldier in pairs(self.TeamFolder:GetChildren()) do
         Soldier:SetAttribute("Offset", self.Orientation[SoldierNumber])
-        Soldier:SetPrimaryPartCFrame(self.CenterPart.CFrame + Soldier:GetAttribute("Offset"))
+        Soldier:SetPrimaryPartCFrame((self.CenterPart.CFrame + Soldier:GetAttribute("Offset")) * CFrame.Angles(0, math.rad(180), 0))
         SoldierNumber += 1
     end
 end
@@ -166,6 +202,9 @@ function LevelController:GenerateTeam()
         self:AddSoldier()
     end
 
+    -- Equip the default weapon (m4)
+    self:Equip("M4")
+
     -- Align the team before the player's loading screen ends
     self:AlignTeam()
 end
@@ -180,7 +219,7 @@ function LevelController:Start()
 
         for _, Soldier in pairs(self.TeamFolder:GetChildren()) do
             -- Lerp to the target position
-            local SoldierTargetX = TargetX + Soldier:GetAttribute("Offset").X
+            local SoldierTargetX = (TargetX + Soldier:GetAttribute("Offset").X)
 
             local TargetPosition = Soldier.PrimaryPart.Position
             TargetPosition = Vector3.new(
@@ -189,7 +228,7 @@ function LevelController:Start()
                 TargetPosition.Z
             )
 
-            Soldier:SetPrimaryPartCFrame(CFrame.new(TargetPosition))
+            Soldier:SetPrimaryPartCFrame(CFrame.new(TargetPosition) * CFrame.Angles(0, math.rad(180), 0))
         end
     end)
 end
