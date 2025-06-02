@@ -29,7 +29,7 @@ function Soldier:Fire()
 end
 
 function Soldier:Remove()
-
+    self.Model:Destroy()
 end
 
 -- // Return module

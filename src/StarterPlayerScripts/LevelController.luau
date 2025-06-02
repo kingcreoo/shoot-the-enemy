@@ -122,7 +122,20 @@ function LevelController:Initialize()
 
     StartLevelEvent.OnClientEvent:Connect(function()
         self:Start()
+        task.wait(2)
+        print('adding 1')
+        self:AddSoldier()
+        task.wait(2)
+        print('removing 2')
+        self:RemoveSoldier(self.Team[2])
+        self:RemoveSoldier(self.Team[3])
+        print('aligning')
+        self:AlignTeam()
     end)
+end
+
+function LevelController:RemoveSoldier(SoldierToRemove)
+    SoldierToRemove:Remove()
 end
 
 function LevelController:AddSoldier()
