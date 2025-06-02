@@ -125,6 +125,14 @@ function LevelController:Initialize()
     end)
 end
 
+function LevelController:AddSoldier()
+    local NewSoldier = SoldierModule.new()
+    table.insert(self.Team, NewSoldier)
+    NewSoldier:Create(self.TeamFolder, self.Skin)
+    NewSoldier:Align(self.Orientation[#self.Team])
+    NewSoldier.Model:SetPrimaryPartCFrame(self.CenterPart.CFrame + NewSoldier.Model:GetAttribute("Offset"))
+end
+
 function LevelController:AlignTeam()
     local SoldierNumber = 1
     for _, Soldier in pairs(self.Team) do
@@ -161,7 +169,7 @@ function LevelController:GenerateTeam()
         NewSoldier:Create(self.TeamFolder, self.Skin, #self.Team+1)
     end
 
-    self.AlignTeam()
+    self:AlignTeam()
 
     -- Start off the soldiers in there correct positions. Player controls will manage the positions after this segment vvv
     for _, Soldier in pairs(self.Team) do
