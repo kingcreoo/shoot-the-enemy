@@ -19,6 +19,8 @@ local LocalPlayerModule = require(LocalPlayerScripts:WaitForChild("PlayerModule"
 local LocalPlayerControls = LocalPlayerModule:GetControls()
 local Mouse = LocalPlayer:GetMouse()
 
+local SoldierModule = require(LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("Client"):WaitForChild("Soldier"))
+
 local LevelManagementEvents = ReplicatedStorage:WaitForChild("LevelManagement")
 local StartLevelEvent: RemoteEvent = LevelManagementEvents:WaitForChild("Start")
 local RequestDataFunction: RemoteFunction = LevelManagementEvents:WaitForChild("RequestData")
@@ -139,24 +141,27 @@ function LevelController:GenerateTeam()
     CenterPart.Parent = self.LevelModel
     self.CenterPart = CenterPart
 
-    local ActiveTeam = Instance.new("Folder")
-    ActiveTeam.Name = "ActiveTeam"
-    ActiveTeam.Parent = self.LevelModel
-    self.ActiveTeam = ActiveTeam
+    local TeamFolder = Instance.new("Folder")
+    TeamFolder.Name = "ActiveTeam"
+    TeamFolder.Parent = self.LevelModel
+    self.TeamFolder = TeamFolder
+
+    self.Team = {}
 
     for _ = 1, self.StartEntities["Team"] do
-        local Soldier = ReplicatedStorage:WaitForChild("Skins"):WaitForChild(self.Skin):Clone()
-        Soldier.Parent = ActiveTeam
+        local NewSoldier = SoldierModule.new()
+        table.insert(self.Team, NewSoldier)
+        NewSoldier:Create(self.TeamFolder, self.Skin, #self.Team+1)
     end
 
     local SoldierNumber = 1
-    for _, Soldier in pairs(ActiveTeam:GetChildren()) do
-        Soldier:SetAttribute("Offset", self.Orientation[SoldierNumber])
+    for _, Soldier in pairs(self.Team) do
+        Soldier:Align(self.Orientation[SoldierNumber])
         SoldierNumber += 1
     end
 
-    for _, Soldier in pairs(ActiveTeam:GetChildren()) do
-        Soldier:SetPrimaryPartCFrame(self.CenterPart.CFrame + Soldier:GetAttribute("Offset"))
+    for _, Soldier in pairs(self.Team) do
+        Soldier.Model:SetPrimaryPartCFrame(self.CenterPart.CFrame + Soldier.Model:GetAttribute("Offset"))
     end
 
     -- TODO align team
@@ -165,13 +170,13 @@ end
 
 function LevelController:Start()
     -- Generate controls
-    RunService.RenderStepped:Connect(function()
+    self.Controls = RunService.RenderStepped:Connect(function()
         local MouseHit = Mouse.Hit
 
         -- Apply movement limits
         local TargetX = math.clamp(MouseHit.Position.X, (self.LevelModel.Start.Position.X - 20), (self.LevelModel.Start.Position.X + 20))
 
-        for _, Soldier in pairs(self.ActiveTeam:GetChildren()) do
+        for _, Soldier in pairs(self.TeamFolder:GetChildren()) do
             -- Lerp to the target position
             local SoldierTargetX = TargetX + Soldier:GetAttribute("Offset").X
 
