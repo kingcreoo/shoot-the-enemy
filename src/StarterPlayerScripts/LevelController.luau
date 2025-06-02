@@ -19,15 +19,12 @@ local LocalPlayerModule = require(LocalPlayerScripts:WaitForChild("PlayerModule"
 local LocalPlayerControls = LocalPlayerModule:GetControls()
 local Mouse = LocalPlayer:GetMouse()
 
-local SoldierModule = require(LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("Client"):WaitForChild("Soldier"))
-
 local LevelManagementEvents = ReplicatedStorage:WaitForChild("LevelManagement")
 local StartLevelEvent: RemoteEvent = LevelManagementEvents:WaitForChild("Start")
 local RequestDataFunction: RemoteFunction = LevelManagementEvents:WaitForChild("RequestData")
 
 local Bindables = ReplicatedStorage:WaitForChild("Bindables")
 local CloseFrameBindable: BindableEvent = Bindables:WaitForChild("CloseFrame")
-local CloseHUDBindable: BindableEvent = Bindables:WaitForChild("CloseHUD")
 
 local Lobby = workspace:WaitForChild("Lobby Build")
 
@@ -122,34 +119,25 @@ function LevelController:Initialize()
 
     StartLevelEvent.OnClientEvent:Connect(function()
         self:Start()
-        task.wait(2)
-        print('adding 1')
-        self:AddSoldier()
-        task.wait(2)
-        print('removing 2')
-        self:RemoveSoldier(self.Team[2])
-        self:RemoveSoldier(self.Team[3])
-        print('aligning')
-        self:AlignTeam()
     end)
 end
 
 function LevelController:RemoveSoldier(SoldierToRemove)
-    SoldierToRemove:Remove()
+    SoldierToRemove:Destroy()
 end
 
 function LevelController:AddSoldier()
-    local NewSoldier = SoldierModule.new()
-    table.insert(self.Team, NewSoldier)
-    NewSoldier:Create(self.TeamFolder, self.Skin)
-    NewSoldier:Align(self.Orientation[#self.Team])
-    NewSoldier.Model:SetPrimaryPartCFrame(self.CenterPart.CFrame + NewSoldier.Model:GetAttribute("Offset"))
+    local Soldier = ReplicatedStorage:WaitForChild("Skins"):WaitForChild(self.Skin):Clone()
+    Soldier:SetAttribute("Offset", self.Orientation[#self.TeamFolder:GetChildren()+1])
+    Soldier:SetPrimaryPartCFrame(self.CenterPart.CFrame + self.Orientation[#self.TeamFolder:GetChildren()+1])
+    Soldier.Parent = self.TeamFolder
 end
 
 function LevelController:AlignTeam()
     local SoldierNumber = 1
-    for _, Soldier in pairs(self.Team) do
-        Soldier:Align(self.Orientation[SoldierNumber])
+    for _, Soldier in pairs(self.TeamFolder:GetChildren()) do
+        Soldier:SetAttribute("Offset", self.Orientation[SoldierNumber])
+        Soldier:SetPrimaryPartCFrame(self.CenterPart.CFrame + Soldier:GetAttribute("Offset"))
         SoldierNumber += 1
     end
 end
@@ -173,21 +161,13 @@ function LevelController:GenerateTeam()
     TeamFolder.Parent = self.LevelModel
     self.TeamFolder = TeamFolder
 
-    self.Team = {}
-
     -- Create soldier modules for each starting soldier
     for _ = 1, self.StartEntities["Team"] do
-        local NewSoldier = SoldierModule.new()
-        table.insert(self.Team, NewSoldier)
-        NewSoldier:Create(self.TeamFolder, self.Skin, #self.Team+1)
+        self:AddSoldier()
     end
 
+    -- Align the team before the player's loading screen ends
     self:AlignTeam()
-
-    -- Start off the soldiers in there correct positions. Player controls will manage the positions after this segment vvv
-    for _, Soldier in pairs(self.Team) do
-        Soldier.Model:SetPrimaryPartCFrame(self.CenterPart.CFrame + Soldier.Model:GetAttribute("Offset"))
-    end
 end
 
 function LevelController:Start()
@@ -208,8 +188,6 @@ function LevelController:Start()
                 TargetPosition.Y,
                 TargetPosition.Z
             )
-
-            --local SoldierPosition = TargetPosition + Soldier:GetAttribute("Offset")
 
             Soldier:SetPrimaryPartCFrame(CFrame.new(TargetPosition))
         end
