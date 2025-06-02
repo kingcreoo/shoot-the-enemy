@@ -125,14 +125,19 @@ function LevelController:Initialize()
     end)
 end
 
-function LevelController:AlignTeam(Target: CFrame)
-    
+function LevelController:AlignTeam()
+    local SoldierNumber = 1
+    for _, Soldier in pairs(self.Team) do
+        Soldier:Align(self.Orientation[SoldierNumber])
+        SoldierNumber += 1
+    end
 end
 
 function LevelController:GenerateTeam()
     -- TODO generate selected skin & operator
     self.Skin = --[[SelectedSkin]] "Default"
 
+    -- Create a center part that soldiers will move based off of
     local CenterPart = Instance.new("Part")
     CenterPart.Transparency = 1
     CenterPart.Anchored = true
@@ -141,6 +146,7 @@ function LevelController:GenerateTeam()
     CenterPart.Parent = self.LevelModel
     self.CenterPart = CenterPart
 
+    -- Create a folder to hold each soldier's model
     local TeamFolder = Instance.new("Folder")
     TeamFolder.Name = "ActiveTeam"
     TeamFolder.Parent = self.LevelModel
@@ -148,24 +154,19 @@ function LevelController:GenerateTeam()
 
     self.Team = {}
 
+    -- Create soldier modules for each starting soldier
     for _ = 1, self.StartEntities["Team"] do
         local NewSoldier = SoldierModule.new()
         table.insert(self.Team, NewSoldier)
         NewSoldier:Create(self.TeamFolder, self.Skin, #self.Team+1)
     end
 
-    local SoldierNumber = 1
-    for _, Soldier in pairs(self.Team) do
-        Soldier:Align(self.Orientation[SoldierNumber])
-        SoldierNumber += 1
-    end
+    self.AlignTeam()
 
+    -- Start off the soldiers in there correct positions. Player controls will manage the positions after this segment vvv
     for _, Soldier in pairs(self.Team) do
         Soldier.Model:SetPrimaryPartCFrame(self.CenterPart.CFrame + Soldier.Model:GetAttribute("Offset"))
     end
-
-    -- TODO align team
-    -- LevelController:AlignTeam()
 end
 
 function LevelController:Start()

@@ -16,8 +16,8 @@ function Soldier.new()
 end
 
 function Soldier:Create(TeamFolder: Folder, Skin: string)
-        self.Model = ReplicatedStorage:WaitForChild("Skins"):WaitForChild(Skin):Clone()
-        self.Model.Parent = TeamFolder
+    self.Model = ReplicatedStorage:WaitForChild("Skins"):WaitForChild(Skin):Clone()
+    self.Model.Parent = TeamFolder
 end
 
 function Soldier:Align(Offset: Vector3)
