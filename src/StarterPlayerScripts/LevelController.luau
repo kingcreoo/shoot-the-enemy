@@ -22,6 +22,8 @@ local LocalPlayerControls = LocalPlayerModule:GetControls()
 local Mouse = LocalPlayer:GetMouse()
 
 local Animations = ReplicatedStorage:WaitForChild("Animations")
+local BulletFolder = ReplicatedStorage:WaitForChild("Bullets")
+local Bullets = workspace:WaitForChild("Bullets")
 
 local LevelManagementEvents = ReplicatedStorage:WaitForChild("LevelManagement")
 local StartLevelEvent: RemoteEvent = LevelManagementEvents:WaitForChild("Start")
@@ -41,6 +43,7 @@ function LevelController.New(World: string, Level: string, Area: string, StartEn
     self.Area = Area
     self.StartEntities = StartEntities
     self.Orientation = Orientation
+    self.FireRate = 4
 
     return self
 end
@@ -138,6 +141,7 @@ function LevelController:AddSoldier()
 end
 
 function LevelController:Equip(Weapon: string)
+    self.Weapon = Weapon
     for _, Soldier in pairs(self.TeamFolder:GetChildren()) do
         local OldWeapon = Soldier:FindFirstChild("Weapon")
         if OldWeapon then
@@ -154,6 +158,7 @@ function LevelController:Equip(Weapon: string)
 
         local NewWeapon = ReplicatedStorage:WaitForChild("Weapons"):WaitForChild(Weapon):Clone()
         NewWeapon.Parent = Soldier
+        NewWeapon.Name = "Weapon"
         local Handle = NewWeapon:WaitForChild("Handle")
         local Joint = Instance.new("Motor6D")
         Joint.Parent = Handle
@@ -209,6 +214,29 @@ function LevelController:GenerateTeam()
     self:AlignTeam()
 end
 
+function LevelController:BulletManager()
+    task.spawn(function()
+        while true do
+            task.wait(1/self.FireRate)
+
+            for _, Soldier in pairs(self.TeamFolder:GetChildren()) do
+                local NewBullet = BulletFolder:WaitForChild(self.Weapon):Clone()
+                NewBullet.Position = Soldier:WaitForChild("Weapon"):WaitForChild("Fire").Position
+                NewBullet.Orientation = NewBullet.Orientation + Vector3.new(0,90,0)
+                NewBullet.Parent = Bullets
+                local Tween = TweenService:Create(NewBullet, TweenInfo.new(Settings["WEAPON_DATA"][self.Weapon][Firerate], Enum.EasingStyle.Linear), {Position = NewBullet.Position + Vector3.new(0, 0, 250)})
+                Tween:Play()
+
+                Tween.Completed:Connect(function()
+                    if NewBullet then
+                        NewBullet:Destroy()
+                    end
+                end)
+            end
+        end
+    end)
+end
+
 function LevelController:Start()
     -- Generate controls
     self.Controls = RunService.RenderStepped:Connect(function()
@@ -231,6 +259,9 @@ function LevelController:Start()
             Soldier:SetPrimaryPartCFrame(CFrame.new(TargetPosition) * CFrame.Angles(0, math.rad(180), 0))
         end
     end)
+
+    -- Generate bullet manager
+    self.BulletManager = self:BulletManager()
 end
 
 -- // Return module

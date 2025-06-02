@@ -26,7 +26,13 @@ SETTINGS.DEFAULT_DATA = {
 SETTINGS.WEAPON_DATA = {
     ["M4"] = {
         ["C0"] = CFrame.new(-0.697, -2.093, 0.167) * CFrame.Angles(math.rad(-90), 0, 0),
-        ["C1"] = CFrame.new(0, -0.062, -0.489)
+        ["C1"] = CFrame.new(0, -0.062, -0.489),
+        ["BulletInfo"] = {
+            ["Color"] = Color3.fromRGB(255, 176, 0),
+            ["Material"] = Enum.Material.Neon,
+            ["Size"] = Vector3.new(4, .3, .3)
+        },
+        ["Firerate"] = 3
     }
 }
 
