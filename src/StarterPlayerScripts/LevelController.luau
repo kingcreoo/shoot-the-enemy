@@ -235,14 +235,14 @@ end
 function LevelController:BulletManager()
     task.spawn(function()
         while true do
-            task.wait(1/self.FireRate)
+            task.wait(1/Settings["WEAPON_DATA"][self.Weapon]["Firerate"])
 
             for _, Soldier in pairs(self.TeamFolder:GetChildren()) do
                 local NewBullet = BulletFolder:WaitForChild(self.Weapon):Clone()
                 NewBullet.Position = Soldier:WaitForChild("Weapon"):WaitForChild("Fire").Position
                 NewBullet.Orientation = NewBullet.Orientation + Vector3.new(0,90,0)
                 NewBullet.Parent = Bullets
-                local Tween = TweenService:Create(NewBullet, TweenInfo.new(Settings["WEAPON_DATA"][self.Weapon]["Firerate"], Enum.EasingStyle.Linear), {Position = NewBullet.Position + Vector3.new(0, 0, 250)})
+                local Tween = TweenService:Create(NewBullet, TweenInfo.new(Settings["WEAPON_DATA"][self.Weapon]["BulletSpeed"], Enum.EasingStyle.Linear), {Position = NewBullet.Position + Vector3.new(0, 0, 250)})
                 Tween:Play()
 
                 Tween.Completed:Connect(function()

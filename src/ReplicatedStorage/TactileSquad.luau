@@ -4,6 +4,11 @@
 -- Since tactile squad has multiple units, we loop through the main model to access them
 -- Each unit inside the folder has an offset value
 
+local MARCH_SPEED = 22
+local HEALTH = 3
+local MARCH_ANIMATION = "M4March"
+local WEAPON = "M4"
+
 -- // Define module
 local TactileSquad = {}
 TactileSquad.__index = TactileSquad
@@ -11,6 +16,10 @@ TactileSquad.__index = TactileSquad
 -- // Services, variables, and modules
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+
+local Animations = ReplicatedStorage:WaitForChild("Animations")
+
+local Settings = require(ReplicatedStorage:WaitForChild("Settings"))
 
 local ReplicatedModel = ReplicatedStorage:WaitForChild("Enemies"):WaitForChild("TactileSquad")
 
@@ -39,6 +48,21 @@ function TactileSquad:Spawn()
     self.Units[2]:SetPrimaryPartCFrame(self.LevelModel:WaitForChild("Spawn" .. tostring(self.Column)).CFrame + Model:WaitForChild("NHRs"):WaitForChild("2"):GetAttribute("Offset"))
     self.Units[3]:SetPrimaryPartCFrame(self.LevelModel:WaitForChild("Spawn" .. tostring(self.Column)).CFrame + Model:WaitForChild("NHRs"):WaitForChild("3"):GetAttribute("Offset"))
 
+    -- Set each unit's weapon
+    for _, Unit in pairs(self.Units) do
+        local NewWeapon = ReplicatedStorage:WaitForChild("Weapons"):WaitForChild(WEAPON):Clone()
+        NewWeapon.Parent = Unit
+        NewWeapon.Name = "Weapon"
+        local Handle = NewWeapon:WaitForChild("Handle")
+        local Joint = Instance.new("Motor6D")
+        Joint.Parent = Handle
+        Joint.Part0 = Unit:WaitForChild("Right Arm")
+        Joint.Part1 = Handle
+
+        Joint.C0 = Settings["WEAPON_DATA"][WEAPON]["C0"]
+        Joint.C1 = Settings["WEAPON_DATA"][WEAPON]["C1"]
+    end
+
     -- Set our model's parent into the workspace so that the units are visible
     self.Model.Parent = self.LevelModel:WaitForChild("Enemies")
 
@@ -48,7 +72,11 @@ end
 
 function TactileSquad:March()
     for _, Unit in pairs(self.Units) do
-        local MarchTween = TweenService:Create(Unit.PrimaryPart, TweenInfo.new(10, Enum.EasingStyle.Linear), {CFrame = self.LevelModel:FindFirstChild("Goal" .. tostring(self.Column)).CFrame + Unit:GetAttribute("Offset")})
+        local Animator: Animator = Unit:WaitForChild("AnimationController"):WaitForChild("Animator")
+        local Track = Animator:LoadAnimation(Animations:WaitForChild(MARCH_ANIMATION))
+        Track:Play()
+
+        local MarchTween = TweenService:Create(Unit.PrimaryPart, TweenInfo.new(MARCH_SPEED, Enum.EasingStyle.Linear), {CFrame = self.LevelModel:FindFirstChild("Goal" .. tostring(self.Column)).CFrame + Unit:GetAttribute("Offset")})
         MarchTween:Play()
     end
 end

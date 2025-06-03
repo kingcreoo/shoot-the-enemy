@@ -32,7 +32,8 @@ SETTINGS.WEAPON_DATA = {
             ["Material"] = Enum.Material.Neon,
             ["Size"] = Vector3.new(4, .3, .3)
         },
-        ["Firerate"] = 2
+        ["Firerate"] = 1.75,
+        ["BulletSpeed"] = 2
     }
 }
 
