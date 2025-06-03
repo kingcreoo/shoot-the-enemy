@@ -11,15 +11,15 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local SETTINGS = require(ReplicatedStorage:WaitForChild("Settings"))
-local SERVER_SETTINGS = require(ServerScriptService:WaitForChild("Server"):WaitForChild("SERVER_SETTINGS"))
 
 local PlayAreas = ReplicatedStorage:WaitForChild("PlayAreas")
 local Limbo = workspace:WaitForChild("Limbo")
 
-local LevelManagementEvents = ReplicatedStorage:WaitForChild("LevelManagement")
-local StartEvent: RemoteEvent = LevelManagementEvents:WaitForChild("Start")
-local GenerateEvent: RemoteEvent = LevelManagementEvents:WaitForChild("Generate")
-local RequestDataFunction: RemoteFunction = LevelManagementEvents:WaitForChild("RequestData")
+local Events = ReplicatedStorage:WaitForChild("Events")
+local Functions = ReplicatedStorage:WaitForChild("Functions")
+
+local GenerateEvent: RemoteEvent = Events:WaitForChild("GenerateLevel")
+local RequestLogFunction: RemoteFunction = Functions:WaitForChild("RequestLog")
 
 -- // Local functions
 
@@ -52,20 +52,13 @@ function LevelController:Initialize()
     --Select available area
     self.Area = SelectVacantPlayArea()
 
-    -- Communicate to client that level is starting, pass along what to generate and where.
-    GenerateEvent:FireClient(self.Player, self.World, self.Level, self.Area.Name, SERVER_SETTINGS["LEVEL_INFO"][self.World][self.Level]["StartEntities"], SERVER_SETTINGS["LEVEL_INFO"][self.World][self.Level]["Orientation"])
+    -- Communicate to client that level is starting
+    GenerateEvent:FireClient(self.Player, self.World, self.Level, self.Area)
 
     -- Teleport player to limbo
     task.delay(1, function()
         self.Player.Character:SetPrimaryPartCFrame(Limbo:WaitForChild("Spawn").CFrame + Vector3.new(0,5,0))
     end)
-
-    -- Wait for client to catch up, then start game
-    task.wait(5)
-    print('start in 1')
-    task.wait(1)
-    StartEvent:FireClient(self.Player, SERVER_SETTINGS["LEVEL_INFO"][self.World][self.Level]["EntitySequence"])
-
 end
 
 -- // Return module

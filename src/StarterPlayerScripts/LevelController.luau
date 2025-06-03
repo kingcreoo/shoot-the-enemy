@@ -25,9 +25,10 @@ local Animations = ReplicatedStorage:WaitForChild("Animations")
 local BulletFolder = ReplicatedStorage:WaitForChild("Bullets")
 local Bullets = workspace:WaitForChild("Bullets")
 
-local LevelManagementEvents = ReplicatedStorage:WaitForChild("LevelManagement")
-local StartLevelEvent: RemoteEvent = LevelManagementEvents:WaitForChild("Start")
-local RequestDataFunction: RemoteFunction = LevelManagementEvents:WaitForChild("RequestData")
+local Events = ReplicatedStorage:WaitForChild("Events")
+local Functions = ReplicatedStorage:WaitForChild("Functions")
+
+local RequestLogFunction: RemoteFunction = Functions:WaitForChild("RequestLog")
 
 local Bindables = ReplicatedStorage:WaitForChild("Bindables")
 local CloseFrameBindable: BindableEvent = Bindables:WaitForChild("CloseFrame")
@@ -36,22 +37,19 @@ local Lobby = workspace:WaitForChild("Lobby Build")
 
 -- // Module functions
 
-function LevelController.New(World: string, Level: string, Area: string, StartEntities: table, Orientation: string)
+function LevelController.New(World: string, Level: string, Area: string)
     local self = setmetatable({}, LevelController)
     self.World = World
     self.Level = Level
+    self.LevelModelString = Settings["LEVEL_DATA"][self.World][self.Level]["LevelModel"]
     self.Area = Area
-    self.StartEntities = StartEntities
-    self.Orientation = Orientation
+    self.Orientation = Settings["LEVEL_DATA"][self.World][self.Level]["Orientation"]
     self.FireRate = 4
 
     return self
 end
 
-function LevelController:Initialize()
-    -- Disable player's controls
-    LocalPlayerControls:Disable()
-
+function LevelController:LoadScreen()
     -- Close all HUD items and frames & start loading screen
     CloseFrameBindable:Fire(nil, false, true)
 
@@ -104,10 +102,18 @@ function LevelController:Initialize()
             end
         end)
     end)
+end
+
+function LevelController:Initialize()
+    -- Disable player's controls
+    LocalPlayerControls:Disable()
+
+    -- Manage load screen
+    self:LoadScreen()
 
     -- Generate & load level
-    local Level = ReplicatedStorage:WaitForChild("Levels"):WaitForChild(self.World):WaitForChild(self.Level):Clone()
-    Level:SetPrimaryPartCFrame(ReplicatedStorage:WaitForChild("PlayAreas"):WaitForChild(self.Area).CFrame)
+    local Level = ReplicatedStorage:WaitForChild("Levels"):WaitForChild(self.World):WaitForChild(self.LevelModelString):Clone()
+    Level:SetPrimaryPartCFrame(ReplicatedStorage:WaitForChild("PlayAreas"):WaitForChild(self.Area.Name).CFrame)
     Level.Name = "ActiveLevel"
     Level.Parent = workspace
     self.LevelModel = Level
@@ -120,13 +126,19 @@ function LevelController:Initialize()
 
     -- Change player's camera
     local Camera = workspace.CurrentCamera
-
     Camera.CameraType = Enum.CameraType.Scriptable
     Camera.CFrame = Level:WaitForChild("CameraReference").CFrame
 
-    StartLevelEvent.OnClientEvent:Connect(function()
-        self:Start()
-    end)
+    -- Generate enemy manager
+    self.EnemyManager = self:EnemyManager(Settings["LEVEL_DATA"][self.World][self.Level]["EnemySpawnSequence"])
+
+    -- Start countdown
+
+    -- Generate controls
+    self.Controls = self:Controls()
+
+    -- Generate bullet manager
+    self.BulletManager = self:BulletManager()
 end
 
 function LevelController:RemoveSoldier(SoldierToRemove)
@@ -202,8 +214,14 @@ function LevelController:GenerateTeam()
     TeamFolder.Parent = self.LevelModel
     self.TeamFolder = TeamFolder
 
-    -- Create soldier modules for each starting soldier
-    for _ = 1, self.StartEntities["Team"] do
+    -- Create a folder to hold each enemy's model
+    local EnemyFolder = Instance.new("Folder")
+    EnemyFolder.Name = "Enemies"
+    EnemyFolder.Parent = self.LevelModel
+    self.EnemyFolder = EnemyFolder
+
+    -- Create soldiers
+    for _ = 1, Settings["LEVEL_DATA"][self.World][self.Level]["StartTeam"] do
         self:AddSoldier()
     end
 
@@ -237,9 +255,18 @@ function LevelController:BulletManager()
     end)
 end
 
-function LevelController:Start()
-    -- Generate controls
-    self.Controls = RunService.RenderStepped:Connect(function()
+function LevelController:EnemyManager(EnemySequence: table)
+    for _, EnemyTable in pairs(EnemySequence) do
+        task.delay(EnemyTable[2],function()
+            local EnemyController = require(ReplicatedStorage:WaitForChild("Settings"):WaitForChild(EnemyTable[1])).new(self.LevelModel, EnemyTable[3])
+            EnemyController:Spawn()
+            EnemyController:March()
+        end)
+    end
+end
+
+function LevelController:Controls()
+    RunService.RenderStepped:Connect(function()
         local MouseHit = Mouse.Hit
 
         -- Apply movement limits
@@ -259,9 +286,6 @@ function LevelController:Start()
             Soldier:SetPrimaryPartCFrame(CFrame.new(TargetPosition) * CFrame.Angles(0, math.rad(180), 0))
         end
     end)
-
-    -- Generate bullet manager
-    self.BulletManager = self:BulletManager()
 end
 
 -- // Return module

@@ -32,7 +32,29 @@ SETTINGS.WEAPON_DATA = {
             ["Material"] = Enum.Material.Neon,
             ["Size"] = Vector3.new(4, .3, .3)
         },
-        ["Firerate"] = 3
+        ["Firerate"] = 2
+    }
+}
+
+SETTINGS.LEVEL_DATA = {
+    ["TactileWorld"] = {
+        ["Level1"] = {
+            ["Type"] = "Defense",
+            ["LevelModel"] = "Level1",
+            ["TotalTime"] = 90,
+            ["StartTeam"] = 5,
+            ["EnemySpawnSequence"] = {
+                {"TactileSquad", 0, 1}
+            },
+            ["Orientation"] = {
+                [1] = Vector3.new(5,0,-3),
+                [2] = Vector3.new(-5,0,-3),
+                [3] = Vector3.new(0,0,4),
+                [4] = Vector3.new(10,0,-6),
+                [5] = Vector3.new(-10,0,-6),
+                [6] = Vector3.new(-15,0,-9),
+            }
+        }
     }
 }
 

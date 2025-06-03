@@ -12,8 +12,9 @@ local Bindables = ReplicatedStorage:WaitForChild("Bindables")
 local OpenFrameBindable: BindableEvent = Bindables:WaitForChild("OpenFrame")
 local CloseFrameBindable: BindableEvent = Bindables:WaitForChild("CloseFrame")
 
-local LevelManagementEvents = ReplicatedStorage:WaitForChild("LevelManagement")
-local GenerateEvent: RemoteEvent = LevelManagementEvents:WaitForChild("Generate")
+local Events = ReplicatedStorage:WaitForChild("Events")
+
+local GenerateEvent: RemoteEvent = Events:WaitForChild("GenerateLevel")
 
 local ProximityPromptsFolder = workspace:WaitForChild("ProximityPrompts")
 local TactileWorldProximityPrompt: ProximityPrompt = ProximityPromptsFolder:WaitForChild("TactileWorld"):WaitForChild("Prompt")
@@ -24,8 +25,8 @@ local PlayPromptDebounce = false
 local CurrentLevel
 
 -- // Functions
-local function GenerateLevel(World: string, Level: string, Area: string, StartEntities: table, Orientation: string)
-    CurrentLevel = LevelControllerModule.New(World, Level, Area, StartEntities, Orientation)
+local function GenerateLevel(World: string, Level: string, Area: string)
+    CurrentLevel = LevelControllerModule.New(World, Level, Area)
     CurrentLevel:Initialize()
 end
 
