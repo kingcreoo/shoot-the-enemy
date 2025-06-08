@@ -267,6 +267,7 @@ end
 
 function LevelController:Controls()
     RunService.RenderStepped:Connect(function()
+        -- Get mouse position
         local MouseHit = Mouse.Hit
 
         -- Apply movement limits

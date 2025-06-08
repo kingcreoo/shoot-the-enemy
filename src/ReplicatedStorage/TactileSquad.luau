@@ -6,6 +6,7 @@
 
 local MARCH_SPEED = 22
 local HEALTH = 3
+local WEAPON_ANIMATION = "M4Idle"
 local MARCH_ANIMATION = "M4March"
 local WEAPON = "M4"
 
@@ -73,8 +74,11 @@ end
 function TactileSquad:March()
     for _, Unit in pairs(self.Units) do
         local Animator: Animator = Unit:WaitForChild("AnimationController"):WaitForChild("Animator")
-        local Track = Animator:LoadAnimation(Animations:WaitForChild(MARCH_ANIMATION))
-        Track:Play()
+        local MarchTrack = Animator:LoadAnimation(Animations:WaitForChild(MARCH_ANIMATION))
+        MarchTrack:Play()
+
+        local WeaponTrack = Animator:LoadAnimation(Animations:WaitForChild(WEAPON_ANIMATION))
+        WeaponTrack:Play()
 
         local MarchTween = TweenService:Create(Unit.PrimaryPart, TweenInfo.new(MARCH_SPEED, Enum.EasingStyle.Linear), {CFrame = self.LevelModel:FindFirstChild("Goal" .. tostring(self.Column)).CFrame + Unit:GetAttribute("Offset")})
         MarchTween:Play()
