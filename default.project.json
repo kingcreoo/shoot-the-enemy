@@ -12,6 +12,10 @@
     "ReplicatedStorage": {
       "Settings": {
         "$path": "src/ReplicatedStorage"
+      },
+      "EnemyModules": {
+        "$className": "Folder",
+        "$path": "src/EnemyModules"
       }
     },
 
@@ -25,6 +29,9 @@
       "StarterPlayerScripts": {
         "Client": {
           "$path": "src/StarterPlayerScripts"
+        },
+        "LevelController": {
+          "$path": "src/LevelController"
         }
       }
     }

@@ -11,6 +11,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local Settings = require(ReplicatedStorage:WaitForChild("Settings"))
 
@@ -35,6 +36,60 @@ local CloseFrameBindable: BindableEvent = Bindables:WaitForChild("CloseFrame")
 
 local Lobby = workspace:WaitForChild("Lobby Build")
 
+-- // Local functions
+
+local function FindAncestorWithAnimationController(Instance)
+	while Instance do
+		if Instance:FindFirstChildOfClass("AnimationController") then
+			return Instance
+		end
+		Instance = Instance.Parent
+	end
+	return nil
+end
+
+local function SpawnExplosion(Color: Color3, Position: Vector3)
+    local EmissionPart = Instance.new("Part")
+    EmissionPart.Name = "ExplosionEmitter"
+    EmissionPart.Size = Vector3.new(1, 1, 1)
+    EmissionPart.CanCollide = false
+    EmissionPart.CanTouch = false
+    EmissionPart.CanQuery = false
+    EmissionPart.Anchored = true
+    EmissionPart.Transparency = 1
+    EmissionPart.Position = Position
+    EmissionPart.Parent = Workspace:WaitForChild("Explosions")
+
+    local Emitter: ParticleEmitter = Instance.new("ParticleEmitter")
+    Emitter.Color = Color
+    Emitter.Brightness = 1
+    Emitter.LightInfluence = 0
+    Emitter.LightEmission = 1
+    Emitter.Orientation = Enum.ParticleOrientation.FacingCamera
+    Emitter.Texture = "rbxassetid://290556384"
+    Emitter.Transparency = 0
+
+    Emitter.EmissionDirection = Enum.NormalId.Top
+    Emitter.Enabled = false
+    Emitter.LifeTime = NumberRange.new(.3, .4)
+    Emitter.Rate = 15
+    Emitter.Rotation = 0
+    Emitter.RotSpeed = NumberRange.new(40, 60)
+    Emitter.Speed = NumberRange.new(2, 3)
+
+    Emitter.Shape = Enum.ParticleEmitterShape.Sphere
+
+    Emitter.Parent = EmissionPart
+    Emitter.Enabled = true
+    task.delay(.5, function()
+        Emitter.Enabled = false
+    end)
+    task.delay(2, function()
+        EmissionPart:Destroy()
+    end)
+end
+
+
 -- // Module functions
 
 function LevelController.New(World: string, Level: string, Area: string)
@@ -44,7 +99,8 @@ function LevelController.New(World: string, Level: string, Area: string)
     self.LevelModelString = Settings["LEVEL_DATA"][self.World][self.Level]["LevelModel"]
     self.Area = Area
     self.Orientation = Settings["LEVEL_DATA"][self.World][self.Level]["Orientation"]
-    self.FireRate = 4
+    self.DueDeaths = {}
+    self.DueBullets = {}
 
     return self
 end
@@ -237,19 +293,110 @@ function LevelController:BulletManager()
         while true do
             task.wait(1/Settings["WEAPON_DATA"][self.Weapon]["Firerate"])
 
+            local RaycastParameters = RaycastParams.new()
+            RaycastParameters.FilterType = Enum.RaycastFilterType.Exclude
+            RaycastParameters.IgnoreWater = true
+
             for _, Soldier in pairs(self.TeamFolder:GetChildren()) do
+                -- Get the bullet's origin time and position
+                local FireTime = os.time()
+                local OriginPosition = Soldier:WaitForChild("Weapon"):WaitForChild("Fire").Position
+                local EndPosition = OriginPosition + Vector3.new(0,0,200)
+                local Direction = (EndPosition - OriginPosition).Unit
+
+                -- Create and tween the bullet in physical space
                 local NewBullet = BulletFolder:WaitForChild(self.Weapon):Clone()
-                NewBullet.Position = Soldier:WaitForChild("Weapon"):WaitForChild("Fire").Position
+                NewBullet.Position = OriginPosition
                 NewBullet.Orientation = NewBullet.Orientation + Vector3.new(0,90,0)
                 NewBullet.Parent = Bullets
-                local Tween = TweenService:Create(NewBullet, TweenInfo.new(Settings["WEAPON_DATA"][self.Weapon]["BulletSpeed"], Enum.EasingStyle.Linear), {Position = NewBullet.Position + Vector3.new(0, 0, 250)})
+                local Tween = TweenService:Create(NewBullet, TweenInfo.new(Settings["WEAPON_DATA"][self.Weapon]["BulletSpeed"], Enum.EasingStyle.Linear), {Position = NewBullet.Position + Vector3.new(0, 0, 200)})
                 Tween:Play()
-
                 Tween.Completed:Connect(function()
                     if NewBullet then
                         NewBullet:Destroy()
                     end
                 end)
+
+                -- Fire calculation raycast
+                RaycastParameters.FilterDescendantsInstances = {Soldier, NewBullet}
+
+                local ToBreak
+                repeat
+                    -- Cast & get result
+                    print('cast')
+                    local Result = Workspace:Raycast(OriginPosition, Direction, RaycastParameters)
+
+                    if Result then
+                        print(Result.Name)
+                    end
+
+                    -- If no result, there is nothing else in the bullet's path, so we break the loop
+                    if not Result then
+                        ToBreak = true
+                        break
+                    end
+
+                    -- If the result isn't in the enemies folder, then continue to the next item in the bullets path (and add this reuslt to the ignore list)
+                    if not Result:IsAncestorOf(self.EnemyFolder) then
+                        table.insert(RaycastParameters.FilterDescendantsInstances, Result.Parent)
+                        continue
+                    end
+
+                    -- If the enemy is due to die, then we see if there may be another item in the bullets path after this enemy
+                    local Enemy = FindAncestorWithAnimationController(Result)
+                    if not Enemy then
+                        table.insert(RaycastParameters.FilterDescendantsInstances, Result)
+                        continue
+                    end
+                    if table.find(self.DueDeaths, Enemy) then
+                        table.insert(RaycastParameters.FilterDescendantsInstances, Result.Parent)
+                        continue
+                    end
+
+                    --
+                    -- OK, this result is an enemy and is not due to die
+                    --
+
+                    -- Calculate when the bullet will be due
+                    local EnemyDistance = math.abs(Result.Position.X - OriginPosition.X)
+                    local BulletSpeed = 200/Settings["WEAPON_DATA"][self.Weapon]["BulletSpeed"]
+                    local EnemySpeed = 200/Settings["ENEMY_DATA"][Enemy:GetAttribute("TYPE")]["MarchSpeed"]
+
+                    local ClosingSpeed = BulletSpeed + EnemySpeed
+
+                    local BulletTravelTime = EnemyDistance / ClosingSpeed
+                    local DueTime = FireTime + BulletTravelTime
+
+                    -- Add bullet to the enemy's due bullet list
+                    if self.DueBullets[Enemy] then
+                        table.insert(self.DueBullets[Enemy], {DueTime, Settings["WEAPON_DATA"][self.Weapon]["Damage"]})
+                    else
+                        self.DueBullets[Enemy] = {}
+                        table.insert(self.DueBullets[Enemy], {DueTime, Settings["WEAPON_DATA"][self.Weapon]["Damage"]})
+                    end
+
+                    -- Check if enemy is due to die considering this bullet's damage. If so, add enemy to due deaths list
+                    local TotalDamage = 0
+                    for _, BulletTable: table in pairs(self.DueBullets[Enemy]) do
+                        TotalDamage += BulletTable[2]
+                    end
+                    if TotalDamage >= Settings["ENEMY_DATA"][Enemy:GetAttribute("TYPE")]["Health"] then
+                        table.insert(self.DueDeaths, Enemy)
+                    end
+
+                    -- At the due time, bullet explodes & enemy receives damage
+                    task.delay(BulletTravelTime, function()
+                        -- Bullet explosion animation
+                        SpawnExplosion(Color3.fromRGB(255, 30, 0), Result.Position)
+                        SpawnExplosion(Color3.fromRGB(255, 179, 0), Result.Position)
+
+                        -- Enemy receives damage
+                        local Health: IntValue = Enemy:WaitForChild("Health")
+                        Health.Value = Health.Value - Settings["WEAPON_DATA"][self.Weapon]["Damage"]
+                    end)
+
+                until ToBreak
+
             end
         end
     end)

@@ -4,11 +4,14 @@
 -- Since tactile squad has multiple units, we loop through the main model to access them
 -- Each unit inside the folder has an offset value
 
+-- STATS
 local MARCH_SPEED = 22
 local HEALTH = 3
+local WEAPON = "M4"
+
+-- ANIMATIONS
 local WEAPON_ANIMATION = "M4Idle"
 local MARCH_ANIMATION = "M4March"
-local WEAPON = "M4"
 
 -- // Define module
 local TactileSquad = {}
@@ -49,7 +52,7 @@ function TactileSquad:Spawn()
     self.Units[2]:SetPrimaryPartCFrame(self.LevelModel:WaitForChild("Spawn" .. tostring(self.Column)).CFrame + Model:WaitForChild("NHRs"):WaitForChild("2"):GetAttribute("Offset"))
     self.Units[3]:SetPrimaryPartCFrame(self.LevelModel:WaitForChild("Spawn" .. tostring(self.Column)).CFrame + Model:WaitForChild("NHRs"):WaitForChild("3"):GetAttribute("Offset"))
 
-    -- Set each unit's weapon
+    -- Set each unit's weapon (and set health)
     for _, Unit in pairs(self.Units) do
         local NewWeapon = ReplicatedStorage:WaitForChild("Weapons"):WaitForChild(WEAPON):Clone()
         NewWeapon.Parent = Unit
@@ -62,6 +65,11 @@ function TactileSquad:Spawn()
 
         Joint.C0 = Settings["WEAPON_DATA"][WEAPON]["C0"]
         Joint.C1 = Settings["WEAPON_DATA"][WEAPON]["C1"]
+
+        local UnitHealth = Instance.new("IntValue")
+        UnitHealth.Name = "Health"
+        UnitHealth.Value = HEALTH
+        UnitHealth.Parent = Unit
     end
 
     -- Set our model's parent into the workspace so that the units are visible
