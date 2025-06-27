@@ -45,10 +45,11 @@ SETTINGS.LEVEL_DATA = {
             ["LevelModel"] = "Level1",
             ["TotalTime"] = 90,
             ["StartTeam"] = 5,
+            ["StartWeapon"] = "M4",
             ["EnemySpawnSequence"] = {
                 {"TactileSquad", 0, 1}
             },
-            ["Orientation"] = {
+            ["Orientations"] = {
                 [1] = Vector3.new(5,0,-3),
                 [2] = Vector3.new(-5,0,-3),
                 [3] = Vector3.new(0,0,4),

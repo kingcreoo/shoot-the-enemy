@@ -1,0 +1,159 @@
+-- // TEAM HANDLER, written by KingCreoo on 5-26-2025
+-- // Manages all functions of the player's team :)
+
+-- // DEFINE
+local TeamHandler = {}
+
+-- // Services & Modules
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Settings = require(ReplicatedStorage:WaitForChild("Settings"))
+local Animations = ReplicatedStorage:WaitForChild("Animations")
+
+-- // Variables
+
+local Team = {}
+local Weapon
+local Skin
+local Orientations
+local CenterPart
+local TeamFolder
+
+-- // Local functions
+
+local function CreateCenterPart(LevelModel)
+    CenterPart = Instance.new("Part")
+    CenterPart.Size = Vector3.new(1, 1, 1)
+    CenterPart.Transparency = 1
+    CenterPart.Anchored = true
+    CenterPart.CFrame = LevelModel:WaitForChild("Start").CFrame
+    CenterPart.Name = "CenterPart"
+    CenterPart.Parent = LevelModel
+end
+
+local function CreateSoldierModel()
+    local Soldier = ReplicatedStorage:WaitForChild("Skins"):WaitForChild(Skin):Clone()
+    Soldier.Parent = TeamFolder
+    return Soldier
+end
+
+-- // Module functions
+
+function TeamHandler.AddSoldier()
+    --1) Create soldier and add to the team table
+    local Soldier = CreateSoldierModel()
+    table.insert(Team, Soldier)
+    local Index = #Team
+
+    --2) Equip soldier's weapon & animate
+    local NewWeapon = ReplicatedStorage:WaitForChild("Weapons"):WaitForChild(Weapon):Clone()
+    NewWeapon.Parent = Soldier
+    NewWeapon.Name = "Weapon"
+    local Handle = NewWeapon:WaitForChild("Handle")
+    local Joint = Instance.new("Motor6D")
+    Joint.Parent = Handle
+    Joint.Part0 = Soldier:WaitForChild("Right Arm")
+    Joint.Part1 = Handle
+
+    Joint.C0 = Settings["WEAPON_DATA"][Weapon]["C0"]
+    Joint.C1 = Settings["WEAPON_DATA"][Weapon]["C1"]
+
+    local Animator: Animator = Soldier:WaitForChild("AnimationController"):WaitForChild("Animator")
+    local IdleAnimation = Animations:WaitForChild(Weapon .. "Idle")
+    local Track = Animator:LoadAnimation(IdleAnimation)
+    Track:Play()
+
+    --3) Align soldier
+    Soldier:SetPrimaryPartCFrame((CenterPart.CFrame + Orientations[Index]) * CFrame.Angles(0, math.rad(180), 0))
+end
+
+function TeamHandler.RemoveSoldier(SoldierToRemove)
+    for Index, Soldier in ipairs(Team) do
+        if Soldier == SoldierToRemove then
+            table.remove(Team, Index)
+            break
+        end
+    end
+    SoldierToRemove:Destroy()
+end
+
+function TeamHandler.Align()
+    for Index, Soldier in ipairs(Team) do
+        local TargetCFrame = (CenterPart.CFrame + Orientations[Index]) * CFrame.Angles(0, math.rad(180), 0)
+
+        local CurrentPosition = Soldier.PrimaryPart.Position
+        local TargetPosition = TargetCFrame.Position
+
+        if (CurrentPosition - TargetPosition).Magnitude > 0.001 then 
+            Soldier:SetPrimaryPartCFrame(TargetCFrame)
+            task.wait(.2)
+        end
+    end
+end
+
+function TeamHandler.Equip(NewWeapon: string)
+    Weapon = NewWeapon
+    for _, Soldier in ipairs(Team) do
+        local OldWeapon = Soldier:FindFirstChild("Weapon")
+        if OldWeapon then
+            OldWeapon:Destroy()
+        end
+
+        local Animator: Animator = Soldier:WaitForChild("AnimationController"):WaitForChild("Animator")
+        local PlayingAnimations = Animator:GetPlayingAnimationTracks()
+        for _, Animation in pairs(PlayingAnimations) do
+            if Animation.Name:match("Idle$") then
+                Animation:Stop()
+            end
+        end
+
+        local SoldierWeapon = ReplicatedStorage:WaitForChild("Weapons"):WaitForChild(Weapon):Clone()
+        SoldierWeapon.Parent = Soldier
+        SoldierWeapon.Name = "Weapon"
+        local Handle = SoldierWeapon:WaitForChild("Handle")
+        local Joint = Instance.new("Motor6D")
+        Joint.Parent = Handle
+        Joint.Part0 = Soldier:WaitForChild("Right Arm")
+        Joint.Part1 = Handle
+
+        Joint.C0 = Settings["WEAPON_DATA"][Weapon]["C0"]
+        Joint.C1 = Settings["WEAPON_DATA"][Weapon]["C1"]
+
+        local IdleAnimation = Animations:WaitForChild(Weapon .. "Idle")
+        local Track = Animator:LoadAnimation(IdleAnimation)
+        Track:Play()
+    end
+end
+
+function TeamHandler.Generate(World: string, Level: string, LevelModel: Model, SelectedSkin: string)
+    --1) Set starting variables
+    Skin = SelectedSkin
+    Weapon = Settings["LEVEL_DATA"][World][Level]["StartWeapon"]
+    Orientations = Settings["LEVEL_DATA"][World][Level]["Orientations"]
+
+    --2) Generate a center part
+    CreateCenterPart()
+
+    --3) Create a folder to hold each soldier's model
+    TeamFolder = Instance.new("Folder")
+    TeamFolder.Name = "ActiveTeam"
+    TeamFolder.Parent = LevelModel
+
+    --4) Create soldiers (and add each to the team table)
+    for _ = 1, Settings["LEVEL_DATA"][World][Level]["StartTeam"] do
+        TeamHandler.AddSoldier()
+    end
+end
+
+function TeamHandler.Recycle()
+    Team = {}
+    Weapon = nil
+    Skin = nil
+    Orientations = nil
+    CenterPart = nil
+    TeamFolder = nil
+end
+
+-- // RETURN
+return TeamHandler
