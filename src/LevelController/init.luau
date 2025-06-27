@@ -7,6 +7,11 @@ LevelController.__index = LevelController
 
 -- // Services, modules, and variables
 
+-- Child modules
+local BulletModule = require(script.BulletHandler)
+local ExplosionModule = require(script.ExplosionHandler)
+local LoadScreenHandler = require(script.LoadScreenHandler)
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
@@ -48,48 +53,6 @@ local function FindAncestorWithAnimationController(Instance)
 	return nil
 end
 
-local function SpawnExplosion(Color: Color3, Position: Vector3)
-    local EmissionPart = Instance.new("Part")
-    EmissionPart.Name = "ExplosionEmitter"
-    EmissionPart.Size = Vector3.new(1, 1, 1)
-    EmissionPart.CanCollide = false
-    EmissionPart.CanTouch = false
-    EmissionPart.CanQuery = false
-    EmissionPart.Anchored = true
-    EmissionPart.Transparency = 1
-    EmissionPart.Position = Position
-    EmissionPart.Parent = Workspace:WaitForChild("Explosions")
-
-    local Emitter: ParticleEmitter = Instance.new("ParticleEmitter")
-    Emitter.Color = Color
-    Emitter.Brightness = 1
-    Emitter.LightInfluence = 0
-    Emitter.LightEmission = 1
-    Emitter.Orientation = Enum.ParticleOrientation.FacingCamera
-    Emitter.Texture = "rbxassetid://290556384"
-    Emitter.Transparency = 0
-
-    Emitter.EmissionDirection = Enum.NormalId.Top
-    Emitter.Enabled = false
-    Emitter.LifeTime = NumberRange.new(.3, .4)
-    Emitter.Rate = 15
-    Emitter.Rotation = 0
-    Emitter.RotSpeed = NumberRange.new(40, 60)
-    Emitter.Speed = NumberRange.new(2, 3)
-
-    Emitter.Shape = Enum.ParticleEmitterShape.Sphere
-
-    Emitter.Parent = EmissionPart
-    Emitter.Enabled = true
-    task.delay(.5, function()
-        Emitter.Enabled = false
-    end)
-    task.delay(2, function()
-        EmissionPart:Destroy()
-    end)
-end
-
-
 -- // Module functions
 
 function LevelController.New(World: string, Level: string, Area: string)
@@ -105,67 +68,12 @@ function LevelController.New(World: string, Level: string, Area: string)
     return self
 end
 
-function LevelController:LoadScreen()
-    -- Close all HUD items and frames & start loading screen
-    CloseFrameBindable:Fire(nil, false, true)
-
-    local LoadingScreen: Frame = LocalGui:WaitForChild("LoadingScreens"):WaitForChild(self.World)
-    local Loadbar: ImageLabel = LoadingScreen:WaitForChild("Scrollbar"):WaitForChild("BackgroundLeft")
-
-    task.spawn(function()
-        LoadingScreen.Size = UDim2.new(0,0,0,0)
-        LoadingScreen.Visible = true
-        LoadingScreen:TweenSize(UDim2.new(1.2, 0, 1.2, 0), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, .25)
-
-        Loadbar.Size = UDim2.new(0.05, 0, 1, 0)
-        Loadbar.Position = UDim2.new(0.025, 0, 0.5, 0)
-        Loadbar:TweenSizeAndPosition(UDim2.new(1,0,1,0), UDim2.new(0.5,0,0.5,0), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 2)
-
-    end)
-
-    task.delay(2.5, function()
-        local Elements = LoadingScreen:GetDescendants()
-        table.insert(Elements, LoadingScreen)
-
-        for _, Element in pairs(Elements) do
-            if Element.ClassName == "Frame" then
-                local FadeoutTween = TweenService:Create(Element, TweenInfo.new(1), {BackgroundTransparency = 1})
-                FadeoutTween:Play()
-            elseif Element.ClassName == "TextLabel" then
-                local FadeoutTween = TweenService:Create(Element, TweenInfo.new(1), {TextTransparency = 1})
-                FadeoutTween:Play()
-            elseif Element.ClassName == "ImageLabel" then
-                local FadeoutTween = TweenService:Create(Element, TweenInfo.new(1), {ImageTransparency = 1})
-                FadeoutTween:Play()
-            elseif Element.ClassName == "UIStroke" then
-                local FadeoutTween = TweenService:Create(Element, TweenInfo.new(1), {Transparency = 1})
-                FadeoutTween:Play()
-            end
-        end
-
-        task.delay(1.05, function()
-            LoadingScreen.Visible = false
-            for _, Element in pairs(Elements) do
-                if Element.ClassName == "Frame" then
-                    Element.BackgroundTransparency = 0
-                elseif Element.ClassName == "TextLabel" then
-                    Element.TextTransparency = 0
-                elseif Element.ClassName == "ImageLabel" then
-                    Element.ImageTransparency = 0
-                elseif Element.ClassName == "UIStroke" then
-                    Element.Transparency = 0
-                end
-            end
-        end)
-    end)
-end
-
 function LevelController:Initialize()
     -- Disable player's controls
     LocalPlayerControls:Disable()
 
     -- Manage load screen
-    self:LoadScreen()
+    LoadScreenHandler:LoadBeginningScreen()
 
     -- Generate & load level
     local Level = ReplicatedStorage:WaitForChild("Levels"):WaitForChild(self.World):WaitForChild(self.LevelModelString):Clone()
@@ -173,6 +81,10 @@ function LevelController:Initialize()
     Level.Name = "ActiveLevel"
     Level.Parent = workspace
     self.LevelModel = Level
+
+    -- Generate bullet & explosion handlers
+    self.BulletHandler = BulletModule.new()
+    self.ExplosionHandler = ExplosionModule.new()
 
     -- Generate & load player's team (but don't enable controls yet)
     self:GenerateTeam()
@@ -387,8 +299,8 @@ function LevelController:BulletManager()
                     -- At the due time, bullet explodes & enemy receives damage
                     task.delay(BulletTravelTime, function()
                         -- Bullet explosion animation
-                        SpawnExplosion(Color3.fromRGB(255, 30, 0), Result.Position)
-                        SpawnExplosion(Color3.fromRGB(255, 179, 0), Result.Position)
+                        self.ExplosionHandler:Create("Standard", Result.Position, Color3.fromRGB(255, 30, 0))
+                        self.ExplosionHandler:Create("Standard", Result.Position, Color3.fromRGB(255, 179, 0))
 
                         -- Enemy receives damage
                         local Health: IntValue = Enemy:WaitForChild("Health")

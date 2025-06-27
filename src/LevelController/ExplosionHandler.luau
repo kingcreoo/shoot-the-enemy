@@ -35,7 +35,7 @@ function ExplosionHandler.new()
 end
 
 -- Create Explosion
-function ExplosionHandler:Create(Type: string, Position: Vector3, ExplosionTime: number, Color: Color3)
+function ExplosionHandler:Create(Type: string, Position: Vector3, Color: Color3)
     -- Get explosion part
     local Explosion = self:Get(Type)
     Explosion.Position = Position
@@ -50,7 +50,7 @@ function ExplosionHandler:Create(Type: string, Position: Vector3, ExplosionTime:
     Emitter:Emit(16)
 
     -- After run time, stop & recycle the explosion
-    task.delay(ExplosionTime, function()
+    task.delay(1, function()
         self.Recycle(Explosion)
     end)
 end
