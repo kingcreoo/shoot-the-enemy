@@ -21,7 +21,6 @@ local Workspace = game:GetService("Workspace")
 local Settings = require(ReplicatedStorage:WaitForChild("Settings"))
 
 local LocalPlayer = Players.LocalPlayer
-local LocalGui: PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local LocalPlayerScripts: PlayerScripts = LocalPlayer:WaitForChild("PlayerScripts")
 local LocalPlayerModule = require(LocalPlayerScripts:WaitForChild("PlayerModule"))
 local LocalPlayerControls = LocalPlayerModule:GetControls()
@@ -31,13 +30,8 @@ local Animations = ReplicatedStorage:WaitForChild("Animations")
 local BulletFolder = ReplicatedStorage:WaitForChild("Bullets")
 local Bullets = workspace:WaitForChild("Bullets")
 
-local Events = ReplicatedStorage:WaitForChild("Events")
 local Functions = ReplicatedStorage:WaitForChild("Functions")
-
 local RequestLogFunction: RemoteFunction = Functions:WaitForChild("RequestLog")
-
-local Bindables = ReplicatedStorage:WaitForChild("Bindables")
-local CloseFrameBindable: BindableEvent = Bindables:WaitForChild("CloseFrame")
 
 local Lobby = workspace:WaitForChild("Lobby Build")
 
@@ -55,7 +49,7 @@ end
 
 -- // Module functions
 
-function LevelController.New(World: string, Level: string, Area: string)
+function LevelController.new(World: string, Level: string, Area: string)
     local self = setmetatable({}, LevelController)
     self.World = World
     self.Level = Level
@@ -73,7 +67,7 @@ function LevelController:Initialize()
     LocalPlayerControls:Disable()
 
     -- Manage load screen
-    LoadScreenHandler:LoadBeginningScreen()
+    LoadScreenHandler.LoadBeginningScreen(self.World)
 
     -- Generate & load level
     local Level = ReplicatedStorage:WaitForChild("Levels"):WaitForChild(self.World):WaitForChild(self.LevelModelString):Clone()

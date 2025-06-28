@@ -46,8 +46,13 @@ SETTINGS.LEVEL_DATA = {
             ["TotalTime"] = 90,
             ["StartTeam"] = 5,
             ["StartWeapon"] = "M4",
-            ["EnemySpawnSequence"] = {
-                {"TactileSquad", 0, 1}
+            ["Lanes"] = {
+                [1] = "Standard",
+                [2] = "Standard",
+                [3] = "Standard"
+            },
+            ["Enemies"] = {
+                {"Grunt", 1, 1, Vector3.new(0,0,0)}
             },
             ["Orientations"] = {
                 [1] = Vector3.new(5,0,-3),

@@ -13,7 +13,7 @@ local Entities = ReplicatedStorage:WaitForChild("Entities")
 -- // Module functions
 
 -- Constructor
-function EntityHandler.New(EntityTypes: table)
+function EntityHandler.new(EntityTypes: table)
     local self = setmetatable({}, EntityHandler)
 
     self.Pool = {}

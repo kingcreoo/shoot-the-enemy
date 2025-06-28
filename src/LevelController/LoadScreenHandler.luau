@@ -18,10 +18,10 @@ local CloseFrameBindable: BindableEvent = Bindables:WaitForChild("CloseFrame")
 
 -- // Module functions
 
-function LoadScreenHandler:LoadBeginningScreen()
+function LoadScreenHandler.LoadBeginningScreen(World: string)
     CloseFrameBindable:Fire(nil, false, true)
 
-    local LoadingScreen: Frame = LocalGui:WaitForChild("LoadingScreens"):WaitForChild(self.World)
+    local LoadingScreen: Frame = LocalGui:WaitForChild("LoadingScreens"):WaitForChild(World)
     local Loadbar: ImageLabel = LoadingScreen:WaitForChild("Scrollbar"):WaitForChild("BackgroundLeft")
 
     task.spawn(function()
@@ -72,7 +72,7 @@ function LoadScreenHandler:LoadBeginningScreen()
     end)
 end
 
-function LoadScreenHandler:LoadEndingScreen()
+function LoadScreenHandler.LoadEndingScreen()
 
 end
 

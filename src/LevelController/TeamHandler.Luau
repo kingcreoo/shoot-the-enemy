@@ -120,7 +120,7 @@ function TeamHandler:Equip(NewWeapon: string)
     end
 end
 
-function TeamHandler.Generate(World: string, Level: string, LevelModel: Model, SelectedSkin: string)
+function TeamHandler.new(World: string, Level: string, LevelModel: Model, SelectedSkin: string)
     local self = setmetatable({}, TeamHandler)
 
     -- 1) Set variables

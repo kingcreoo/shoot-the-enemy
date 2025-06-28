@@ -26,7 +26,7 @@ local CurrentLevel
 
 -- // Functions
 local function GenerateLevel(World: string, Level: string, Area: string)
-    CurrentLevel = LevelControllerModule.New(World, Level, Area)
+    CurrentLevel = LevelControllerModule.new(World, Level, Area)
     CurrentLevel:Initialize()
 end
 
