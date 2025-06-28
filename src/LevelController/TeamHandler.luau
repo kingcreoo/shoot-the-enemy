@@ -138,7 +138,7 @@ function TeamHandler.new(World: string, Level: string, LevelModel: Model, Select
         TeamHandler.AddSoldier()
     end
 
-    return self
+    return self, self.TeamFolder
 end
 
 -- // RETURN
