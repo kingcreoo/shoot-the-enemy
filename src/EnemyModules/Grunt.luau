@@ -5,101 +5,138 @@
 -- Each unit inside the folder has an offset value
 
 -- STATS
-local MARCH_SPEED = 22
 local HEALTH = 3
 local WEAPON = "M4"
+
+local ACTION_LOOP = {
+    [1] = {"March", 22, 1}
+}
 
 -- ANIMATIONS
 local WEAPON_ANIMATION = "M4Idle"
 local MARCH_ANIMATION = "M4March"
 
 -- // Define module
-local TactileSquad = {}
-TactileSquad.__index = TactileSquad
+local Grunt = {}
+Grunt.__index = Grunt
 
 -- // Services, variables, and modules
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local Animations = ReplicatedStorage:WaitForChild("Animations")
-
 local Settings = require(ReplicatedStorage:WaitForChild("Settings"))
 
-local ReplicatedModel = ReplicatedStorage:WaitForChild("Enemies"):WaitForChild("TactileSquad")
-
 -- // Module functions
-function TactileSquad.new(LevelModel: Model, Column: number)
-    local self = setmetatable({}, TactileSquad)
-    self.Column = Column
+function Grunt.new(Model: Model, LevelModel: Model, InfoTable: table)
+    local self = setmetatable({}, Grunt)
+    self.Model = Model
     self.LevelModel = LevelModel
+    self.InfoTable = InfoTable
+
+    self.Health = HEALTH
+    self.Animator = self.Model:WaitForChild("AnimationController"):WaitForChild("Animator")
 
     return self
 end
 
-function TactileSquad:Spawn()
-    -- No spawn animation necessary because this enemy spawns at the natural spawn points and crawls its way into the scene
-    local Model = ReplicatedModel:Clone()
-    self.Model = Model
+function Grunt:Spawn()
+    --1) Position unit where it's to be spawned (in it's lane factory + it's unit offset)
+    self.Model:SetPrimaryPartCFrame(self.LevelModel:WaitForChild("Spawn" .. tostring(self.InfoTable[3])).CFrame + self.InfoTable[4])
 
-    -- Create a unit table for easier reference
-    self.Units = {}
-    self.Units[1] = Model:WaitForChild("NHRs"):WaitForChild("1")
-    self.Units[2] = Model:WaitForChild("NHRs"):WaitForChild("2")
-    self.Units[3] = Model:WaitForChild("NHRs"):WaitForChild("3")
+    --2) Set unit weapon and health
+    local NewWeapon = ReplicatedStorage:WaitForChild("Weapons"):WaitForChild(WEAPON):Clone()
+    NewWeapon.Parent = self.Model
+    NewWeapon.Name = "Weapon"
+    local Handle = NewWeapon:WaitForChild("Handle")
+    local Joint = Instance.new("Motor6D")
+    Joint.Parent = Handle
+    Joint.Part0 = self.Model:WaitForChild("Right Arm")
+    Joint.Part1 = Handle
 
-    -- Set positions of each unit
-    self.Units[1]:SetPrimaryPartCFrame(self.LevelModel:WaitForChild("Spawn" .. tostring(self.Column)).CFrame)
-    self.Units[2]:SetPrimaryPartCFrame(self.LevelModel:WaitForChild("Spawn" .. tostring(self.Column)).CFrame + Model:WaitForChild("NHRs"):WaitForChild("2"):GetAttribute("Offset"))
-    self.Units[3]:SetPrimaryPartCFrame(self.LevelModel:WaitForChild("Spawn" .. tostring(self.Column)).CFrame + Model:WaitForChild("NHRs"):WaitForChild("3"):GetAttribute("Offset"))
+    Joint.C0 = Settings["WEAPON_DATA"][WEAPON]["C0"]
+    Joint.C1 = Settings["WEAPON_DATA"][WEAPON]["C1"]
 
-    -- Set each unit's weapon (and set health)
-    for _, Unit in pairs(self.Units) do
-        local NewWeapon = ReplicatedStorage:WaitForChild("Weapons"):WaitForChild(WEAPON):Clone()
-        NewWeapon.Parent = Unit
-        NewWeapon.Name = "Weapon"
-        local Handle = NewWeapon:WaitForChild("Handle")
-        local Joint = Instance.new("Motor6D")
-        Joint.Parent = Handle
-        Joint.Part0 = Unit:WaitForChild("Right Arm")
-        Joint.Part1 = Handle
+    local UnitHealth = Instance.new("IntValue")
+    UnitHealth.Name = "Health"
+    UnitHealth.Value = HEALTH
+    UnitHealth.Parent = self.Model
 
-        Joint.C0 = Settings["WEAPON_DATA"][WEAPON]["C0"]
-        Joint.C1 = Settings["WEAPON_DATA"][WEAPON]["C1"]
-
-        local UnitHealth = Instance.new("IntValue")
-        UnitHealth.Name = "Health"
-        UnitHealth.Value = HEALTH
-        UnitHealth.Parent = Unit
-    end
-
-    -- Set our model's parent into the workspace so that the units are visible
+    --3) Run spawn animation
+    -- For now, just make the unit visible. We will create animations later
     self.Model.Parent = self.LevelModel:WaitForChild("Enemies")
 
-    -- Return set of units to the level controller
-    return self.Units
+    --4) After spawn animation, run ActionLoop
+    self:ActionLoop()
 end
 
-function TactileSquad:March()
-    for _, Unit in pairs(self.Units) do
-        local Animator: Animator = Unit:WaitForChild("AnimationController"):WaitForChild("Animator")
-        local MarchTrack = Animator:LoadAnimation(Animations:WaitForChild(MARCH_ANIMATION))
-        MarchTrack:Play()
-
-        local WeaponTrack = Animator:LoadAnimation(Animations:WaitForChild(WEAPON_ANIMATION))
-        WeaponTrack:Play()
-
-        local MarchTween = TweenService:Create(Unit.PrimaryPart, TweenInfo.new(MARCH_SPEED, Enum.EasingStyle.Linear), {CFrame = self.LevelModel:FindFirstChild("Goal" .. tostring(self.Column)).CFrame + Unit:GetAttribute("Offset")})
-        MarchTween:Play()
+function Grunt:ActionLoop()
+    for Index, Table in ipairs(ACTION_LOOP) do
+        if Table[1] == "March" then
+            if Index == #ACTION_LOOP then
+                self:March(true, Table[2], Table[3])
+            else
+                self:March(false, Table[2], Table[3])
+            end
+        end
     end
 end
 
-function TactileSquad:Damage()
+function Grunt:March(FinalMarch: boolean, Duration: number, FractionOfDistance: number)
+    --1) Get animator & play the unit's marching track
+    local MarchTrack = self.Animator:LoadAnimation(Animations:WaitForChild(MARCH_ANIMATION))
+    MarchTrack:Play()
 
+    --2) Play the weapon's marching track
+    local WeaponTrack = self.Animator:LoadAnimation(Animations:WaitForChild(WEAPON_ANIMATION))
+    WeaponTrack:Play()
+
+    --3) Create and play a tween that moves the unit along
+    local StartCFrame = self.Model.PrimaryPart.CFrame
+    local GoalCFrame = self.LevelModel:FindFirstChild("Goal" .. tostring(self.InfoTable[3])).CFrame + self.InfoTable[4]                     -- lane offset
+    local TargetCFrame = StartCFrame:Lerp(GoalCFrame, FractionOfDistance)
+
+    local MarchTween = TweenService:Create(
+        self.Model.PrimaryPart,
+        TweenInfo.new(Duration, Enum.EasingStyle.Linear),
+        { CFrame = TargetCFrame }
+    )
+
+    MarchTween:Play()
+
+    --4) If the tween ends and this is a final march, we trigger the reach end function
+    MarchTween.Completed:Connect(function()
+        if FinalMarch then
+            self:ReachEnd()
+        end
+    end)
 end
 
-function TactileSquad:Remove()
+function Grunt:ReachEnd()
+    print("Unit has reached the end. Write heart decrements later.")
+    self:Destroy()
+end
 
+function Grunt:TakeDamage(Damage: number)
+    --1) Calculate whether unit will be alive after receiving damage
+    if self.Health - Damage <= 0 then
+        -- If no, then destroy the unit
+        self:Destroy()
+    else
+        -- If yes, then subtract the damage from health and update UI(later)
+        self.Health -= Damage
+    end
+end
+
+function Grunt:Destroy()
+    --1) Run death animation
+    -- For now, just delete model
+    if self.Destroyed then return end
+    self.Destroyed = true
+
+    -- TODO: play death FX / drop loot
+    self.Model:Destroy()
 end
 
 -- // Return module
-return TactileSquad
+return Grunt

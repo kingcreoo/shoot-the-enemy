@@ -61,7 +61,8 @@ SETTINGS.LEVEL_DATA = {
                 [4] = Vector3.new(10,0,-6),
                 [5] = Vector3.new(-10,0,-6),
                 [6] = Vector3.new(-15,0,-9),
-            }
+            },
+            ["EntityTypes"] = {"SmallBullet", "LargeBullet", "StandardExplosion"}
         }
     }
 }

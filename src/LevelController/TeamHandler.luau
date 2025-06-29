@@ -34,6 +34,14 @@ end
 
 -- // Module functions
 
+function TeamHandler:GetSoldierOffset(Soldier)
+    for Index, S in ipairs(self.Team) do
+        if S == Soldier then
+            return self.Orientations[Index]            -- ← match found
+        end
+    end
+end
+
 function TeamHandler:AddSoldier()
     --1) Create soldier and add to the team table
     local Soldier = CreateSoldierModel(self.TeamFolder, self.Skin)

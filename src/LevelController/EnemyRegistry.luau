@@ -26,14 +26,14 @@ end
 
 -- // Module functions
 
-function EnemyRegistry.new(World: string, Level: string)
+function EnemyRegistry.new(World: string, Level: string, LevelModel: Model)
     local self = setmetatable({}, EnemyRegistry)
 
     -- Create registry of enemies
     self.Registry = {}
     for _, EnemyTable in pairs(Settings["LEVEL_DATA"][World][Level]["Enemies"]) do
         local Enemy = CreateEnemy(EnemyTable[1])
-        self.Registry[Enemy] = EnemyModulesTable[EnemyTable[1]].new(Enemy, EnemyTable)
+        self.Registry[Enemy] = EnemyModulesTable[EnemyTable[1]].new(Enemy, LevelModel, EnemyTable)
     end
 
     return self
