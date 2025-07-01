@@ -22,6 +22,8 @@ local Enemies = ReplicatedStorage:WaitForChild("Enemies")
 local function CreateEnemy(Type: string)
     local Enemy = Enemies:WaitForChild(Type):Clone()
     Enemy.Parent = ReplicatedStorage
+
+    return Enemy
 end
 
 -- // Module functions

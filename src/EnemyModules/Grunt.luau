@@ -37,6 +37,11 @@ function Grunt.new(Model: Model, LevelModel: Model, InfoTable: table)
     self.Health = HEALTH
     self.Animator = self.Model:WaitForChild("AnimationController"):WaitForChild("Animator")
 
+    task.delay(InfoTable[2], function()
+        self.StartTime = os.time()
+        self:Spawn()
+    end)
+    
     return self
 end
 
@@ -136,6 +141,10 @@ function Grunt:Destroy()
 
     -- TODO: play death FX / drop loot
     self.Model:Destroy()
+end
+
+function Grunt:GetData()
+    return self.InfoTable, self.StartTime, self.Health
 end
 
 -- // Return module
