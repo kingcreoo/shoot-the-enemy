@@ -6,7 +6,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local LevelControllerModule = require(Players.LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("Client"):WaitForChild("LevelController"))
+local LevelControllerModule = require(Players.LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("LevelController"))
 
 local Bindables = ReplicatedStorage:WaitForChild("Bindables")
 local OpenFrameBindable: BindableEvent = Bindables:WaitForChild("OpenFrame")

@@ -31,10 +31,6 @@ local LocalPlayerControls = LocalPlayerModule:GetControls()
 local Mouse = LocalPlayer:GetMouse()
 
 -- Variables
-local Animations = ReplicatedStorage:WaitForChild("Animations")
-local BulletFolder = ReplicatedStorage:WaitForChild("Bullets")
-local Bullets = workspace:WaitForChild("Bullets")
-
 local Functions = ReplicatedStorage:WaitForChild("Functions")
 local RequestLogFunction: RemoteFunction = Functions:WaitForChild("RequestLog")
 
@@ -82,6 +78,9 @@ function LevelController:Initialize()
     Level.Name = "ActiveLevel"
     Level.Parent = workspace
     self.LevelModel = Level
+    local EnemyFolder = Instance.new("Folder")
+    EnemyFolder.Name   = "Enemies"
+    EnemyFolder.Parent = self.LevelModel
 
     --4) Generate handlers
     self.EntityHandler = EntityHandler.new(Settings["LEVEL_DATA"][self.World][self.Level]["EntityTypes"])
@@ -117,7 +116,7 @@ function LevelController:Controls()
 
         for _, Soldier in pairs(self.TeamFolder:GetChildren()) do
             -- Lerp to the target position
-            local SoldierTargetX = (TargetX + TeamHandler:GetSoldierOffset(Soldier).X)
+            local SoldierTargetX = (TargetX + self.TeamHandler:GetSoldierOffset(Soldier).X)
 
             local TargetPosition = Soldier.PrimaryPart.Position
             TargetPosition = Vector3.new(
@@ -135,3 +134,6 @@ end
 function LevelController:BulletManager()
 
 end
+
+-- // RETURN
+return LevelController

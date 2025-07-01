@@ -136,14 +136,15 @@ function TeamHandler.new(World: string, Level: string, LevelModel: Model, Select
     self.Weapon = Settings["LEVEL_DATA"][World][Level]["StartWeapon"]
     self.Skin = SelectedSkin
     self.Orientations = Settings["LEVEL_DATA"][World][Level]["Orientations"]
-    self.enterPart = CreateCenterPart()
-    self.TeamFolder = Instance.new("Folder")
-    self.TeamFolder.Name = "ActiveTeam"
-    self.TeamFolder.Parent = LevelModel
+    self.CenterPart = CreateCenterPart(LevelModel)
+    local TeamFolder = Instance.new("Folder")
+    TeamFolder.Name = "ActiveTeam"
+    TeamFolder.Parent = LevelModel
+    self.TeamFolder = TeamFolder
 
     --2) Create soldiers (and add each to the team table)
     for _ = 1, Settings["LEVEL_DATA"][World][Level]["StartTeam"] do
-        TeamHandler.AddSoldier()
+        self:AddSoldier()
     end
 
     return self, self.TeamFolder
