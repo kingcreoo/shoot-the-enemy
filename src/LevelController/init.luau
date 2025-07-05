@@ -235,7 +235,48 @@ end
 
 -- Manage bullets :)
 function LevelController:BulletManager()
+    -- Spawn a background thread
+    task.spawn(function()
+        while true do
+            local Weapon = self.Weapon
+            local BulletSpeed = Settings["WEAPON_DATA"][Weapon]["BulletSpeed"]
+            local Damage = Settings["WEAPON_DATA"][Weapon]["Damage"]
 
+            local EnemyTable: table = self.EnemyRegistry:GetEnemyInfo()
+
+            for _, Soldier in ipairs(self.TeamHandler.Team) do
+                local OriginPosition = Soldier:WaitForChild("Weapon"):WaitForChild("Fire").Position
+                
+                local ValidEnemies = SelectValidEnemies(EnemyTable, OriginPosition, BulletSpeed, self.Distance)
+                local Target, TargetHitTime = SelectTarget(ValidEnemies, OriginPosition, BulletSpeed, self.Distance)
+
+                local Bullet = self.EntityHandler:Create("SmallBullet")
+                Bullet.Position = Soldier:WaitForChild("Weapon"):WaitForChild("Fire").Position
+                Bullet.Orientation = Bullet.Orientation + Vector3.new(0,90,0)
+                Bullet.Parent = Bullets
+
+                local Distance = BulletSpeed * TargetHitTime
+                local FireCF = Soldier:WaitForChild("Weapon"):WaitForChild("Fire").CFrame
+                local RawDirection = (FireCF).LookVector
+                local Direction = Vector3.new(RawDirection.X, 0, RawDirection.Z)
+
+                local EndPosition = OriginPosition + Direction * Distance
+
+                if Target then
+                    local BulletTween = TweenService:Create(Bullet, TweenInfo.new(TargetHitTime, Enum.EasingStyle.Linear), {Position = EndPosition})
+                    BulletTween:Play()
+                else
+                    local MaxTime = self.Distance / BulletSpeed
+                    local MaxPosition = OriginPosition + Direction * self.Distance
+
+                    local BulletTween = TweenService:Create(Bullet, TweenInfo.new(MaxTime, Enum.EasingStyle.Linear), {Position = MaxPosition})
+                    BulletTween:Play()
+                end
+            end
+
+            task.wait(Settings["WEAPON_DATA"][Weapon]["Firerate"])
+        end
+    end)
 end
 
 -- // RETURN
