@@ -49,5 +49,24 @@ function EnemyRegistry:Cleanup()
     table.clear(self.Registry)
 end
 
+function EnemyRegistry:GetEnemyInfo()
+    local EnemyInfo = {}
+
+    for Enemy, Controller in pairs(self.Registry) do
+        local EnemyInfoTable = {}
+
+        EnemyInfoTable["Enemy"] = Enemy
+        EnemyInfoTable["MovementMode"] = Controller.MovementMode
+        EnemyInfoTable["StartTime"] = Controller.StartTime
+        EnemyInfoTable["HitboxRadius"] = Controller.HitboxRadius
+        EnemyInfoTable["X"] = Enemy.PrimaryPart.Position.X
+        EnemyInfoTable["Z"] = Enemy.PrimaryPart.Position.Z
+
+        table.insert(EnemyInfo, EnemyInfoTable)
+    end
+
+    return EnemyInfo
+end
+
 -- // RETURN
 return EnemyRegistry
