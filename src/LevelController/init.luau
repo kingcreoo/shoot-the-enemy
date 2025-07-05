@@ -184,6 +184,37 @@ local function CalculateHitTime(OriginPosition, BulletSpeed, Enemy, ActionLoop, 
     return HitTime
 end
 
+local function SelectValidEnemies(EnemyTable, OriginPosition, BulletSpeed, LevelDistance)
+    local ValidEnemies = {}
+    for _, Enemy in pairs(EnemyTable) do
+        -- If this enemy is due to die, then check the next enemy
+        if table.find(DueDeaths, Enemy) then
+            continue
+        end
+
+        -- We check if the bullet will hit the enemy
+        if Enemy.Type == "Laneswapper" then
+            --[[local EnemyModule = require(EnemyModules:WaitForChild(Enemy.Name))
+            local ActionLoop = EnemyModule.ACTION_LOOP
+
+            local CurrentActionNum, CurrentAction, _, TimeRemaining = CalculateActions(Enemy.StartTime, ActionLoop)
+
+            local HitTime = CalculateHitTime(OriginPosition, BulletSpeed, Enemy, ActionLoop, CurrentActionNum, CurrentAction, 0, TimeRemaining, LevelDistance)
+
+            --]]
+            print('todo later')
+        else
+            if math.abs(OriginPosition.X - Enemy.X) > Enemy.HitboxRadius then
+                continue
+            else
+                table.insert(ValidEnemies, Enemy)
+            end
+        end
+    end
+
+    return ValidEnemies
+end
+
 -- Manage bullets :)
 function LevelController:BulletManager()
 
