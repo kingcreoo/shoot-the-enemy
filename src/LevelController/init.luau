@@ -215,6 +215,24 @@ local function SelectValidEnemies(EnemyTable, OriginPosition, BulletSpeed, Level
     return ValidEnemies
 end
 
+local function SelectTarget(ValidEnemies, OriginPosition, BulletSpeed, LevelDistance)
+    local Target, TargetHitTime = nil, math.huge
+    for _, Enemy in pairs(ValidEnemies) do
+        local EnemyModule = require(EnemyModules:WaitForChild(Enemy.Enemy.Name))
+        local ActionLoop = EnemyModule.ACTION_LOOP
+        local CurrentActionNum, CurrentAction, _, TimeRemaining = CalculateActions(Enemy.StartTime, ActionLoop)
+
+        local HitTime = CalculateHitTime(OriginPosition, BulletSpeed, Enemy, ActionLoop, CurrentActionNum, CurrentAction, 0, TimeRemaining, LevelDistance)
+
+        if HitTime < TargetHitTime then
+            Target = Enemy
+            TargetHitTime = HitTime
+        end
+    end
+
+    return Target, TargetHitTime
+end
+
 -- Manage bullets :)
 function LevelController:BulletManager()
 
