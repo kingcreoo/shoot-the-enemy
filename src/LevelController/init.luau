@@ -36,6 +36,13 @@ local RequestLogFunction: RemoteFunction = Functions:WaitForChild("RequestLog")
 
 local Lobby = workspace:WaitForChild("Lobby Build")
 
+local DueBullets = {}
+local DueDeaths = {}
+
+local Bullets = Workspace:WaitForChild("Bullets")
+
+local EnemyModules = ReplicatedStorage:WaitForChild("EnemyModules")
+
 -- // Local functions
 
 local function FindAncestorWithAnimationController(Instance)
@@ -58,8 +65,6 @@ function LevelController.new(World: string, Level: string, Area: string)
     self.LevelModelString = Settings["LEVEL_DATA"][self.World][self.Level]["LevelModel"]
     self.Area = Area
     self.Orientation = Settings["LEVEL_DATA"][self.World][self.Level]["Orientation"]
-    self.DueDeaths = {}
-    self.DueBullets = {}
 
     return self
 end
@@ -81,6 +86,8 @@ function LevelController:Initialize()
     local EnemyFolder = Instance.new("Folder")
     EnemyFolder.Name   = "Enemies"
     EnemyFolder.Parent = self.LevelModel
+    self.Weapon = Settings["LEVEL_DATA"][self.World][self.Level]["StartWeapon"]
+    self.Distance = (self.LevelModel:WaitForChild("Goal1").Position - self.LevelModel:WaitForChild("Spawn1").Position).Magnitude
 
     --4) Generate handlers
     self.EntityHandler = EntityHandler.new(Settings["LEVEL_DATA"][self.World][self.Level]["EntityTypes"])

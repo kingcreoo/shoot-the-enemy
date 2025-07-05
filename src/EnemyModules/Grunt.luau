@@ -1,8 +1,4 @@
--- // Tactile squad enemy module written by KingCreoo on 2-6-2025
-
--- Tactile squad is a basic unit that spawns at the spawn areas naturally
--- Since tactile squad has multiple units, we loop through the main model to access them
--- Each unit inside the folder has an offset value
+-- // Grunt enemy module written by KingCreoo on 7-5-2025
 
 -- STATS
 local HEALTH = 3
@@ -33,6 +29,9 @@ function Grunt.new(Model: Model, LevelModel: Model, InfoTable: table)
     self.Model = Model
     self.LevelModel = LevelModel
     self.InfoTable = InfoTable
+
+    self.MovementMode = "Straightline"
+    self.HitboxRadius = 2
 
     self.Health = HEALTH
     self.Animator = self.Model:WaitForChild("AnimationController"):WaitForChild("Animator")
@@ -148,4 +147,5 @@ function Grunt:GetData()
 end
 
 -- // Return module
+Grunt.ACTION_LOOP = ACTION_LOOP
 return Grunt

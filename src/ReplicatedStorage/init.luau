@@ -33,7 +33,7 @@ SETTINGS.WEAPON_DATA = {
             ["Size"] = Vector3.new(4, .3, .3)
         },
         ["Firerate"] = 1.75,
-        ["BulletSpeed"] = 2,
+        ["BulletSpeed"] = 100,
         ["Damage"] = 1
     }
 }
