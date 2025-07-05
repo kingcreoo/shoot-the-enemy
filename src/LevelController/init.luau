@@ -130,6 +130,37 @@ function LevelController:Controls()
     end)
 end
 
+local function CalculateActions(StartTime, ActionLoop)
+    -- Get the current time, and time elapsed since the unit spawned
+    local CurrentTime = os.time()
+    local TimeElapsed = CurrentTime - StartTime
+
+    -- Walk the loop until we find the action we are on
+    local LoopTimeElapsed = 0
+    local CurrentAction
+    local TimeRemaining
+    local CurrentActionNum = 0
+    for _, ActionTable in ipairs(ActionLoop) do
+        CurrentActionNum += 1
+        local ActionTime = ActionTable[2]
+        LoopTimeElapsed += ActionTime
+
+        if LoopTimeElapsed <= TimeElapsed then
+            -- The unit is not on this action, because time has elapsed further down the loop
+            continue
+        elseif LoopTimeElapsed > TimeElapsed then
+            -- The unit is on this action :)
+            CurrentAction = ActionTable
+            TimeRemaining = math.abs(TimeElapsed - LoopTimeElapsed)
+
+            -- Break
+            break
+        end
+    end
+
+    -- Return the action the unit is on, the time elapsed, and time remaining on this current action
+    return CurrentActionNum, CurrentAction, TimeElapsed, TimeRemaining
+end
 -- Manage bullets :)
 function LevelController:BulletManager()
 
