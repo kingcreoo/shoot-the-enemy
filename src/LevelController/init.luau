@@ -161,6 +161,29 @@ local function CalculateActions(StartTime, ActionLoop)
     -- Return the action the unit is on, the time elapsed, and time remaining on this current action
     return CurrentActionNum, CurrentAction, TimeElapsed, TimeRemaining
 end
+
+local function CalculateHitTime(OriginPosition, BulletSpeed, Enemy, ActionLoop, CurrentActionNum, CurrentAction, TimeSinceFired, TimeRemaining, LevelDistance)
+    local HitTime
+
+    local CurrentSpeed = ((LevelDistance * CurrentAction[3]) / CurrentAction[2])
+    local CurrentDistance = math.abs(OriginPosition.Z - Enemy.Z)
+    local CurrentActionHitTime = CurrentDistance / (BulletSpeed + CurrentSpeed)
+    if CurrentActionHitTime <= TimeRemaining then
+        HitTime = CurrentActionHitTime + TimeSinceFired
+    else
+        local DistanceTravelled = (BulletSpeed + CurrentSpeed) * TimeRemaining
+
+        local NewTimeSinceFired = TimeSinceFired + TimeRemaining
+        local Direction = (Enemy.Z > OriginPosition.Z) and 1 or -1
+        local NewZ = OriginPosition.Z + DistanceTravelled * Direction
+        local NewOriginPosition = Vector3.new(OriginPosition.X, OriginPosition.Y, NewZ)
+
+        HitTime = CalculateHitTime(NewOriginPosition, BulletSpeed, Enemy, ActionLoop, CurrentActionNum+1, ActionLoop[CurrentActionNum+1], NewTimeSinceFired, ActionLoop[CurrentActionNum+1][2], LevelDistance)
+    end
+
+    return HitTime
+end
+
 -- Manage bullets :)
 function LevelController:BulletManager()
 
