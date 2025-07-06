@@ -125,6 +125,18 @@ local function SelectTarget(ValidEnemies, OriginPosition, BulletSpeed, LevelDist
     return Target, TargetHitTime
 end
 
+local function CreateExplosion(EntityHandler, Position, Color, Amount)
+    local Explosion1 = EntityHandler:Create("StandardExplosion")
+    Explosion1.Parent = Explosions
+    Explosion1.CFrame = CFrame.new(Position)
+    Explosion1:WaitForChild("ParticleEmitter").Color = Color
+    Explosion1:WaitForChild("ParticleEmitter"):Emit(Amount)
+    task.delay(1, function()
+        Explosion1.Parent = ReplicatedStorage
+        EntityHandler:Recycle(Explosion1)
+    end)
+end
+
 -- // Module functions
 
 function BulletHandler.new(EnemyRegistry, EntityHandler, TeamHandler, Distance)
@@ -172,25 +184,8 @@ function BulletHandler:Manager()
                     BulletTween:Play()
 
                     task.delay(TargetHitTime-.28, function()
-                        local Explosion1 = self.EntityHandler:Create("StandardExplosion")
-                        Explosion1.Parent = Explosions
-                        Explosion1.CFrame = CFrame.new(EndPosition)
-                        Explosion1:WaitForChild("ParticleEmitter").Color = ColorSequence.new(Color3.fromRGB(255, 70, 70))
-                        Explosion1:WaitForChild("ParticleEmitter"):Emit(16)
-                        task.delay(1, function()
-                            Explosion1.Parent = ReplicatedStorage
-                            self.EntityHandler:Recycle(Explosion1)
-                        end)
-
-                        local Explosion2 = self.EntityHandler:Create("StandardExplosion")
-                        Explosion2.Parent = Explosions
-                        Explosion2.CFrame = CFrame.new(EndPosition)
-                        Explosion2:WaitForChild("ParticleEmitter").Color = ColorSequence.new(Color3.fromRGB(255, 200, 70))
-                        Explosion2:WaitForChild("ParticleEmitter"):Emit(12)
-                        task.delay(1, function()
-                            Explosion2.Parent = ReplicatedStorage
-                            self.EntityHandler:Recycle(Explosion2)
-                        end)
+                        CreateExplosion(self.EntityHandler, EndPosition, ColorSequence.new(Color3.fromRGB(255, 70, 70)), 6)
+                        CreateExplosion(self.EntityHandler, EndPosition, ColorSequence.new(Color3.fromRGB(255, 200, 70)), 6)
                     end)
 
                     BulletTween.Completed:Connect(function()
