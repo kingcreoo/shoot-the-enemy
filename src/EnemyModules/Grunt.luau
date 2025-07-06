@@ -36,8 +36,11 @@ function Grunt.new(Model: Model, LevelModel: Model, InfoTable: table)
     self.Health = HEALTH
     self.Animator = self.Model:WaitForChild("AnimationController"):WaitForChild("Animator")
 
+    self.TotalDuration = 22
+
     task.delay(InfoTable[2], function()
         self.StartTime = os.time()
+        self.StartTick = tick()
         self:Spawn()
     end)
     
@@ -90,6 +93,12 @@ function Grunt:ActionLoop()
 end
 
 function Grunt:March(FinalMarch: boolean, Duration: number, FractionOfDistance: number)
+    --0) If we're on the final march, then set the time remaining so that other modules can see
+    if FinalMarch then
+        self.FinalMarchTick = tick()
+        self.FinalMarchDuration = Duration
+    end
+
     --1) Get animator & play the unit's marching track
     local MarchTrack = self.Animator:LoadAnimation(Animations:WaitForChild(MARCH_ANIMATION))
     MarchTrack:Play()

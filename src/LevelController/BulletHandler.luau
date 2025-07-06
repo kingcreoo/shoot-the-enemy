@@ -115,7 +115,19 @@ local function SelectTarget(ValidEnemies, OriginPosition, BulletSpeed, LevelDist
         local ActionLoop = EnemyModule.ACTION_LOOP
         local CurrentActionNum, CurrentAction, _, TimeRemaining = CalculateActions(Enemy.StartTime, ActionLoop)
 
+        if not CurrentAction then
+            continue
+        end
+
         local HitTime = CalculateHitTime(OriginPosition, BulletSpeed, Enemy, ActionLoop, CurrentActionNum, CurrentAction, 0, TimeRemaining, LevelDistance)
+
+        -- If hit time is longer than the time it takes for the unit to reach the end, then coninue to the next option
+        local TimeElapsed = tick() - Enemy.StartTick
+        local TimeToEnd = Enemy.TotalDuration - TimeElapsed
+        if HitTime >= TimeToEnd then
+            print("HitTime >= TimeToEnd")
+            continue
+        end
 
         if HitTime < TargetHitTime then
             Target = Enemy

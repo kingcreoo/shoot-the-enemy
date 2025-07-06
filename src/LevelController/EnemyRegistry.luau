@@ -67,6 +67,9 @@ function EnemyRegistry:GetEnemyInfo()
         EnemyInfoTable["X"] = Enemy.PrimaryPart.Position.X
         EnemyInfoTable["Z"] = Enemy.PrimaryPart.Position.Z
 
+        EnemyInfoTable["StartTick"] = Controller.StartTick
+        EnemyInfoTable["TotalDuration"] = Controller.TotalDuration
+
         table.insert(EnemyInfo, EnemyInfoTable)
     end
 
