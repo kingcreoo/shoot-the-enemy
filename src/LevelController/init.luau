@@ -12,6 +12,7 @@ local EnemyRegistryModule = require(script.EnemyRegistry)
 local EntityHandler = require(script.EntityHandler)
 local LoadScreenHandler = require(script.LoadScreenHandler)
 local TeamHandler = require(script.TeamHandler)
+local BulletHandler = require(script.BulletHandler)
 
 -- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -40,20 +41,9 @@ local DueBullets = {}
 local DueDeaths = {}
 
 local Bullets = Workspace:WaitForChild("Bullets")
+local Explosions = Workspace:WaitForChild("Explosions")
 
 local EnemyModules = ReplicatedStorage:WaitForChild("EnemyModules")
-
--- // Local functions
-
-local function FindAncestorWithAnimationController(Instance)
-	while Instance do
-		if Instance:FindFirstChildOfClass("AnimationController") then
-			return Instance
-		end
-		Instance = Instance.Parent
-	end
-	return nil
-end
 
 -- // Module functions
 
@@ -109,7 +99,7 @@ function LevelController:Initialize()
     --skip for now
 
     --9) Generate bullet manager
-    self.BulletManager = self:BulletManager()
+    self.BulletManager = BulletHandler.new(self.EnemyRegistry, self.EntityHandler, self.TeamHandler, self.Distance)
 end
 
 -- Activate controls
@@ -133,155 +123,6 @@ function LevelController:Controls()
             )
 
             Soldier:SetPrimaryPartCFrame(CFrame.new(TargetPosition) * CFrame.Angles(0, math.rad(180), 0))
-        end
-    end)
-end
-
-local function CalculateActions(StartTime, ActionLoop)
-    -- Get the current time, and time elapsed since the unit spawned
-    local CurrentTime = os.time()
-    local TimeElapsed = CurrentTime - StartTime
-
-    -- Walk the loop until we find the action we are on
-    local LoopTimeElapsed = 0
-    local CurrentAction
-    local TimeRemaining
-    local CurrentActionNum = 0
-    for _, ActionTable in ipairs(ActionLoop) do
-        CurrentActionNum += 1
-        local ActionTime = ActionTable[2]
-        LoopTimeElapsed += ActionTime
-
-        if LoopTimeElapsed <= TimeElapsed then
-            -- The unit is not on this action, because time has elapsed further down the loop
-            continue
-        elseif LoopTimeElapsed > TimeElapsed then
-            -- The unit is on this action :)
-            CurrentAction = ActionTable
-            TimeRemaining = math.abs(TimeElapsed - LoopTimeElapsed)
-
-            -- Break
-            break
-        end
-    end
-
-    -- Return the action the unit is on, the time elapsed, and time remaining on this current action
-    return CurrentActionNum, CurrentAction, TimeElapsed, TimeRemaining
-end
-
-local function CalculateHitTime(OriginPosition, BulletSpeed, Enemy, ActionLoop, CurrentActionNum, CurrentAction, TimeSinceFired, TimeRemaining, LevelDistance)
-    local HitTime
-
-    local CurrentSpeed = ((LevelDistance * CurrentAction[3]) / CurrentAction[2])
-    local CurrentDistance = math.abs(OriginPosition.Z - Enemy.Z)
-    local CurrentActionHitTime = CurrentDistance / (BulletSpeed + CurrentSpeed)
-    if CurrentActionHitTime <= TimeRemaining then
-        HitTime = CurrentActionHitTime + TimeSinceFired
-    else
-        local DistanceTravelled = (BulletSpeed + CurrentSpeed) * TimeRemaining
-
-        local NewTimeSinceFired = TimeSinceFired + TimeRemaining
-        local Direction = (Enemy.Z > OriginPosition.Z) and 1 or -1
-        local NewZ = OriginPosition.Z + DistanceTravelled * Direction
-        local NewOriginPosition = Vector3.new(OriginPosition.X, OriginPosition.Y, NewZ)
-
-        HitTime = CalculateHitTime(NewOriginPosition, BulletSpeed, Enemy, ActionLoop, CurrentActionNum+1, ActionLoop[CurrentActionNum+1], NewTimeSinceFired, ActionLoop[CurrentActionNum+1][2], LevelDistance)
-    end
-
-    return HitTime
-end
-
-local function SelectValidEnemies(EnemyTable, OriginPosition, BulletSpeed, LevelDistance)
-    local ValidEnemies = {}
-    for _, Enemy in pairs(EnemyTable) do
-        -- If this enemy is due to die, then check the next enemy
-        if table.find(DueDeaths, Enemy) then
-            continue
-        end
-
-        -- We check if the bullet will hit the enemy
-        if Enemy.Type == "Laneswapper" then
-            --[[local EnemyModule = require(EnemyModules:WaitForChild(Enemy.Name))
-            local ActionLoop = EnemyModule.ACTION_LOOP
-
-            local CurrentActionNum, CurrentAction, _, TimeRemaining = CalculateActions(Enemy.StartTime, ActionLoop)
-
-            local HitTime = CalculateHitTime(OriginPosition, BulletSpeed, Enemy, ActionLoop, CurrentActionNum, CurrentAction, 0, TimeRemaining, LevelDistance)
-
-            --]]
-            print('todo later')
-        else
-            if math.abs(OriginPosition.X - Enemy.X) > Enemy.HitboxRadius then
-                continue
-            else
-                table.insert(ValidEnemies, Enemy)
-            end
-        end
-    end
-
-    return ValidEnemies
-end
-
-local function SelectTarget(ValidEnemies, OriginPosition, BulletSpeed, LevelDistance)
-    local Target, TargetHitTime = nil, math.huge
-    for _, Enemy in pairs(ValidEnemies) do
-        local EnemyModule = require(EnemyModules:WaitForChild(Enemy.Enemy.Name))
-        local ActionLoop = EnemyModule.ACTION_LOOP
-        local CurrentActionNum, CurrentAction, _, TimeRemaining = CalculateActions(Enemy.StartTime, ActionLoop)
-
-        local HitTime = CalculateHitTime(OriginPosition, BulletSpeed, Enemy, ActionLoop, CurrentActionNum, CurrentAction, 0, TimeRemaining, LevelDistance)
-
-        if HitTime < TargetHitTime then
-            Target = Enemy
-            TargetHitTime = HitTime
-        end
-    end
-
-    return Target, TargetHitTime
-end
-
--- Manage bullets :)
-function LevelController:BulletManager()
-    -- Spawn a background thread
-    task.spawn(function()
-        while true do
-            local Weapon = self.Weapon
-            local BulletSpeed = Settings["WEAPON_DATA"][Weapon]["BulletSpeed"]
-            local Damage = Settings["WEAPON_DATA"][Weapon]["Damage"]
-
-            local EnemyTable: table = self.EnemyRegistry:GetEnemyInfo()
-
-            for _, Soldier in ipairs(self.TeamHandler.Team) do
-                local OriginPosition = Soldier:WaitForChild("Weapon"):WaitForChild("Fire").Position
-                
-                local ValidEnemies = SelectValidEnemies(EnemyTable, OriginPosition, BulletSpeed, self.Distance)
-                local Target, TargetHitTime = SelectTarget(ValidEnemies, OriginPosition, BulletSpeed, self.Distance)
-
-                local Bullet = self.EntityHandler:Create("SmallBullet")
-                Bullet.Position = Soldier:WaitForChild("Weapon"):WaitForChild("Fire").Position
-                Bullet.Orientation = Bullet.Orientation + Vector3.new(0,90,0)
-                Bullet.Parent = Bullets
-
-                local Distance = BulletSpeed * TargetHitTime
-                local FireCF = Soldier:WaitForChild("Weapon"):WaitForChild("Fire").CFrame
-                local RawDirection = (FireCF).LookVector
-                local Direction = Vector3.new(RawDirection.X, 0, RawDirection.Z)
-
-                local EndPosition = OriginPosition + Direction * Distance
-
-                if Target then
-                    local BulletTween = TweenService:Create(Bullet, TweenInfo.new(TargetHitTime, Enum.EasingStyle.Linear), {Position = EndPosition})
-                    BulletTween:Play()
-                else
-                    local MaxTime = self.Distance / BulletSpeed
-                    local MaxPosition = OriginPosition + Direction * self.Distance
-
-                    local BulletTween = TweenService:Create(Bullet, TweenInfo.new(MaxTime, Enum.EasingStyle.Linear), {Position = MaxPosition})
-                    BulletTween:Play()
-                end
-            end
-
-            task.wait(Settings["WEAPON_DATA"][Weapon]["Firerate"])
         end
     end)
 end
