@@ -53,9 +53,14 @@ function EnemyRegistry:GetEnemyInfo()
     local EnemyInfo = {}
 
     for Enemy, Controller in pairs(self.Registry) do
+        if not Enemy.Parent or not Enemy.PrimaryPart then
+            self.Registry[Enemy] = nil
+            continue
+        end
         local EnemyInfoTable = {}
 
         EnemyInfoTable["Enemy"] = Enemy
+        EnemyInfoTable["Controller"] = Controller
         EnemyInfoTable["MovementMode"] = Controller.MovementMode
         EnemyInfoTable["StartTime"] = Controller.StartTime
         EnemyInfoTable["HitboxRadius"] = Controller.HitboxRadius
@@ -66,6 +71,10 @@ function EnemyRegistry:GetEnemyInfo()
     end
 
     return EnemyInfo
+end
+
+function EnemyRegistry:Remove(Enemy)
+    self.Registry[Enemy] = nil
 end
 
 -- // RETURN

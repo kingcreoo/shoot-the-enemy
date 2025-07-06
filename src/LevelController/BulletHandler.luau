@@ -80,7 +80,8 @@ local function SelectValidEnemies(EnemyTable, OriginPosition, BulletSpeed, Level
     local ValidEnemies = {}
     for _, Enemy in pairs(EnemyTable) do
         -- If this enemy is due to die, then check the next enemy
-        if table.find(DueDeaths, Enemy) then
+        if table.find(DueDeaths, Enemy.Enemy) then
+            print('case 1', os.time())
             continue
         end
 
@@ -180,6 +181,19 @@ function BulletHandler:Manager()
                 local EndPosition = OriginPosition + Direction * Distance
 
                 if Target then
+                    if not DueBullets[Target.Enemy] then
+                        DueBullets[Target.Enemy] = {}
+                    end
+                    local BulletNumber = #DueBullets[Target.Enemy]+1
+                    table.insert(DueBullets[Target.Enemy], Damage)
+                    local TotalDamage = 0
+                    for _, BulletDamage in pairs(DueBullets[Target.Enemy]) do
+                        TotalDamage += BulletDamage
+                    end
+                    if TotalDamage >= Target.Controller.Health then
+                        table.insert(DueDeaths, Target.Enemy)
+                    end
+
                     local BulletTween = TweenService:Create(Bullet, TweenInfo.new(TargetHitTime, Enum.EasingStyle.Linear), {Position = EndPosition})
                     BulletTween:Play()
 
@@ -191,6 +205,17 @@ function BulletHandler:Manager()
                     BulletTween.Completed:Connect(function()
                         Bullet.Orientation = Bullet.Orientation - Vector3.new(0,90,0)
                         self.EntityHandler:Recycle(Bullet)
+
+                        table.remove(DueBullets[Target.Enemy], BulletNumber)
+
+                        if Target and Target.Controller then
+                            local Death = Target.Controller:TakeDamage(Damage)
+                            if Death then
+                                self.EnemyRegistry:Remove(Target.Enemy)
+                                DueBullets[Target.Enemy] = nil
+                                DueDeaths[Target.Enemy] = nil
+                            end
+                        end
                     end)
                 else
                     local MaxTime = self.Distance / BulletSpeed

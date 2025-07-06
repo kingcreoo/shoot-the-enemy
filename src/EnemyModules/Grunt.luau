@@ -126,9 +126,13 @@ function Grunt:TakeDamage(Damage: number)
     if self.Health - Damage <= 0 then
         -- If no, then destroy the unit
         self:Destroy()
+
+        return true
     else
         -- If yes, then subtract the damage from health and update UI(later)
         self.Health -= Damage
+
+        return false
     end
 end
 
