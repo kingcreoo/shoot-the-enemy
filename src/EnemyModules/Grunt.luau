@@ -76,6 +76,9 @@ end
 
 function Grunt:ActionLoop()
     for Index, Table in ipairs(ACTION_LOOP) do
+        if self.Destroyed then
+            return
+        end
         if Table[1] == "March" then
             if Index == #ACTION_LOOP then
                 self:March(true, Table[2], Table[3])
@@ -110,7 +113,7 @@ function Grunt:March(FinalMarch: boolean, Duration: number, FractionOfDistance: 
 
     --4) If the tween ends and this is a final march, we trigger the reach end function
     MarchTween.Completed:Connect(function()
-        if FinalMarch then
+        if FinalMarch and not self.Destroyed then
             self:ReachEnd()
         end
     end)
