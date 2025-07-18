@@ -1,65 +1,20 @@
 # Shoot the Enemy!
 
-A low‑poly, tactical war‑sim built on Roblox with performance in mind.
+Shoot the Enemy! drops the player onto a low poly, stylised straight‑line battlefield where they command a squad of soldiers against waves of generated foes. The focus is simple, soothing gameplay that anybody could play! The basic mechanics of the game should be kept simple: shoot the enmies coming at you, upgrade(or downgrade!) your team when obstactles/rewards come your way. Levels should be easy and short (2-3 minutes).
 
-## Concept
-
-Shoot the Enemy! drops the player onto a stylised straight‑line battlefield where they command a squad of soldiers against waves of AI foes. The focus is snappy gun‑play, cartoony explosions, and smooth performance across devices. Desktop users can toggle a high‑detail mode with beefier models and effects, while mobile players benefit from aggressive optimisation.
+Though the base of the game is to be kept entirely simple and soothing, that does not mean we will cheap out on various additions to the game. The player spawns inside of a lobby where they can pick between different worlds to play levels inside of. Each world will have it's own themes or specific challenges. The player can choose a cosmetic skin for their team when joining a level. Players can also choose an operator, a centralized larger soldier on their team, that has a special ability or trait that could apply to the whole team. At the end of a level a 'boss' spawns. Two styles of multiplayer: 1) Arena mode where 6-8 players see who can last the longest 2) Duel mode where two players see who performs the best.
 
 ## Core gameplay loop
 
-- Players choose a level from various universes
-- Control your squad as endless waves and enemies approach you
-- Collect rewards and upgrade your team over time
+- Players choose a level from various worlds
+- Control your squad from left to right as endless waves and enemies approach you
+- Collect rewards and upgrade your team over time inside a level
 
-## Feature Highlights
+## Core tools / build direction
 
-Procedural Levels – Offensive & defensive templates picked at runtime by LevelSelector and orchestrated by LevelController.
-
-Modular Architecture – Clean Luau modules, single‑responsibility, hot‑reload friendly with Rojo + VS Code.
-
-Performance Tooling – Built‑in profiler overlay, tween pooling, connection throttling, and memory‑leak guards ensure a stable 60 FPS target.
+- Modular Architecture – Clean Luau modules, single‑responsibility.
+- Using ROJO / VSCODE to stray away from ROBLOX STUDIO
 
 ## Art Direction
 
 The game adopts a low‑poly minimalist aesthetic that is easy on performance and instantly readable, yet unafraid to drop a more intricate build when it adds wow‑factor. Simple shapes, bold colours, and clean silhouettes keep the action clear and satisfying.
-
-## Code Style & Conventions
-
-4‑space indent, no tabs.
-
-Prefer task.spawn over coroutine.wrap.
-
-Avoid wait(); use task.wait() with explicit delta for deterministic timing.
-
-Modules never mutate globals—dependencies are injected through constructors.
-
-## Roadmap
-
-✅ Completed
-
-Level Selector 🎯
-
-🛠️ In Progress
-
-Core Gameplay Loop
-
-✅ Enemy spawning & animations
-
-✅ Bullet system
-
-✅ Bullet & explosion pooling
-
-✅ Team controls & basics
-
-⏳ Ending with rewards
-
-⏳ Security checking
-
-🔜 To Do
-
-⚔️ Flesh out additional enemy types
-
-👩‍✈️ Operators (hero units)
-
-🛡️ In‑level upgrades, boosts & obstacles
