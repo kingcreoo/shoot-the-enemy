@@ -23,6 +23,7 @@ local RequestLogFunction: RemoteFunction = Functions:WaitForChild("RequestLog")
 
 -- // Local functions
 
+-- Finds and reserves an available play area for the level
 local function SelectVacantPlayArea()
     local SelectedArea
     for _, Area in pairs(PlayAreas:GetChildren()) do
@@ -37,6 +38,7 @@ local function SelectVacantPlayArea()
 end
 
 -- // Module functions
+-- Creates a new server-side level controller instance for managing player progression
 function LevelController.Create(Player: Player, World: string, Level: string)
     local self = setmetatable({}, LevelController)
     self.Player = Player
@@ -46,6 +48,7 @@ function LevelController.Create(Player: Player, World: string, Level: string)
     return self
 end
 
+-- Initializes the server-side level setup and player management
 function LevelController:Initialize()
     print(self.Player.Name .. " is starting " .. self.World .. " " .. self.Level .. "!")
 

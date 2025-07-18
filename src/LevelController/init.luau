@@ -48,6 +48,7 @@ local EnemyModules = ReplicatedStorage:WaitForChild("EnemyModules")
 -- // Module functions
 
 -- Constructor
+-- Creates a new level controller instance for managing level state and logic
 function LevelController.new(World: string, Level: string, Area: string)
     local self = setmetatable({}, LevelController)
     self.World = World
@@ -60,6 +61,7 @@ function LevelController.new(World: string, Level: string, Area: string)
 end
 
 -- Set up level
+-- Initializes the level by setting up environment, handlers, and starting systems
 function LevelController:Initialize()
     --1) Disable player's controls
     LocalPlayerControls:Disable()
@@ -103,6 +105,7 @@ function LevelController:Initialize()
 end
 
 -- Activate controls
+-- Sets up mouse-based controls for player movement and soldier positioning
 function LevelController:Controls()
     RunService.RenderStepped:Connect(function()
         -- Get mouse position
@@ -111,8 +114,8 @@ function LevelController:Controls()
         -- Apply movement limits
         local TargetX = math.clamp(MouseHit.Position.X, (self.LevelModel.Start.Position.X - 20), (self.LevelModel.Start.Position.X + 20))
 
+        -- Lerp to the target position + their personal offset
         for _, Soldier in pairs(self.TeamFolder:GetChildren()) do
-            -- Lerp to the target position
             local SoldierTargetX = (TargetX + self.TeamHandler:GetSoldierOffset(Soldier).X)
 
             local TargetPosition = Soldier.PrimaryPart.Position

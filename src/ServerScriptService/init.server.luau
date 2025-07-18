@@ -25,6 +25,7 @@ local function InitializeData(Player: Player, PlayerData: table)
     leaderstats.Parent = Player
     leaderstats.Name = "leaderstats"
 
+    -- Populate each stat as an IntValue / BoolValue etc.
     for Name, Value in pairs(PlayerData["leaderstats"]) do
         local String = type(Value) .. "Value"
 
@@ -34,6 +35,7 @@ local function InitializeData(Player: Player, PlayerData: table)
         Stat.Parent = leaderstats
     end
 
+    -- Flags the server checks before starting new levels
     local PlayingLevel = Instance.new("BoolValue")
     PlayingLevel.Parent = Player
     PlayingLevel.Name = "PlayingLevel"
@@ -45,6 +47,7 @@ local function InitializeData(Player: Player, PlayerData: table)
     PlayingDebounce.Value = false
 end
 
+-- Finds a free spawn Part, teleports the character, and locks it for 12 s
 local function SelectSpawnPoint(Character)
     local Spawned = false
 

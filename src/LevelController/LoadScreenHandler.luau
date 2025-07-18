@@ -18,6 +18,7 @@ local CloseFrameBindable: BindableEvent = Bindables:WaitForChild("CloseFrame")
 
 -- // Module functions
 
+-- Shows the world-specific “loading” screen, animates a scroll bar, then fades everything out.
 function LoadScreenHandler.LoadBeginningScreen(World: string)
     CloseFrameBindable:Fire(nil, false, true)
 
@@ -25,16 +26,19 @@ function LoadScreenHandler.LoadBeginningScreen(World: string)
     local Loadbar: ImageLabel = LoadingScreen:WaitForChild("Scrollbar"):WaitForChild("BackgroundLeft")
 
     task.spawn(function()
+        -- Pop the frame in with a quick zoom effect
         LoadingScreen.Size = UDim2.new(0,0,0,0)
         LoadingScreen.Visible = true
         LoadingScreen:TweenSize(UDim2.new(1.2, 0, 1.2, 0), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, .25)
 
+        -- Animate the scroll bar from 5 % → 100 %
         Loadbar.Size = UDim2.new(0.05, 0, 1, 0)
         Loadbar.Position = UDim2.new(0.025, 0, 0.5, 0)
         Loadbar:TweenSizeAndPosition(UDim2.new(1,0,1,0), UDim2.new(0.5,0,0.5,0), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 2)
 
     end)
 
+        -- After the bar finishes (2.5 s), fade every descendant to transparent, then hide the screen
     task.delay(2.5, function()
         local Elements = LoadingScreen:GetDescendants()
         table.insert(Elements, LoadingScreen)
@@ -55,6 +59,7 @@ function LoadScreenHandler.LoadBeginningScreen(World: string)
             end
         end
 
+        -- Reset transparencies so the frame can be reused next level
         task.delay(1.05, function()
             LoadingScreen.Visible = false
             for _, Element in pairs(Elements) do
@@ -72,6 +77,7 @@ function LoadScreenHandler.LoadBeginningScreen(World: string)
     end)
 end
 
+-- Placeholder for future “level complete” splash; currently unused.
 function LoadScreenHandler.LoadEndingScreen()
 
 end

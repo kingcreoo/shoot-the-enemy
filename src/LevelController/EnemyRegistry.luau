@@ -19,6 +19,7 @@ local Enemies = ReplicatedStorage:WaitForChild("Enemies")
 
 -- // Local functions
 
+-- Creates and clones a new enemy instance of the specified type
 local function CreateEnemy(Type: string)
     local Enemy = Enemies:WaitForChild(Type):Clone()
     Enemy.Parent = ReplicatedStorage
@@ -28,6 +29,7 @@ end
 
 -- // Module functions
 
+-- Creates a new enemy registry instance for managing all enemies in a level
 function EnemyRegistry.new(World: string, Level: string, LevelModel: Model)
     local self = setmetatable({}, EnemyRegistry)
 
@@ -41,6 +43,7 @@ function EnemyRegistry.new(World: string, Level: string, LevelModel: Model)
     return self
 end
 
+-- Cleans up and destroys all enemy instances in the registry
 function EnemyRegistry:Cleanup()
     for Enemy, _ in pairs(self.Registry) do
         Enemy:Destroy()
@@ -49,6 +52,7 @@ function EnemyRegistry:Cleanup()
     table.clear(self.Registry)
 end
 
+-- Retrieves comprehensive information about all active enemies for targeting purposes
 function EnemyRegistry:GetEnemyInfo()
     local EnemyInfo = {}
 
@@ -76,6 +80,7 @@ function EnemyRegistry:GetEnemyInfo()
     return EnemyInfo
 end
 
+-- Removes a specific enemy from the registry
 function EnemyRegistry:Remove(Enemy)
     self.Registry[Enemy] = nil
 end

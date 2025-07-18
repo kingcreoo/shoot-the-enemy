@@ -14,6 +14,7 @@ local Animations = ReplicatedStorage:WaitForChild("Animations")
 local Settings = require(ReplicatedStorage:WaitForChild("Settings"))
 
 -- // Module functions
+-- Creates new Grunt enemy instance
 function Grunt.new(Model: Model, LevelModel: Model, InfoTable: table)
     --1) Set metatable
     local self = setmetatable({}, Grunt)
@@ -34,6 +35,7 @@ function Grunt.new(Model: Model, LevelModel: Model, InfoTable: table)
 
     self.Animator = self.Model:WaitForChild("AnimationController"):WaitForChild("Animator")
 
+    --3) Spawn the enemy at it's spawn time, and note spawn time/tick
     task.delay(InfoTable[2], function()
         self.StartTime = os.time()
         self.StartTick = tick()
@@ -43,6 +45,7 @@ function Grunt.new(Model: Model, LevelModel: Model, InfoTable: table)
     return self
 end
 
+-- Spawns the enemy unit in the level
 function Grunt:Spawn()
     --1) Position unit where it's to be spawned (in it's lane factory + it's unit offset)
     self.Model:SetPrimaryPartCFrame(self.LevelModel:WaitForChild("Spawn" .. tostring(self.InfoTable[3])).CFrame + self.InfoTable[4])
@@ -73,15 +76,23 @@ function Grunt:Spawn()
     self:ActionLoop()
 end
 
+-- Executes enemy's action sequence loop
 function Grunt:ActionLoop()
+    --) We loop through each of the actions in the action loop for this enemy
     for Index, Table in ipairs(self.ACTION_LOOP) do
+        -- Index is the position the action is in the action loop, table is the table containing details for that action
+
+        -- If the enemy has been killed, just return
         if self.Destroyed then
             return
         end
         if Table[1] == "March" then
+            -- If this action is a march, then march the enemy!
             if Index == #self.ACTION_LOOP then
+                -- If this march action is the last action in the loop, march with 'finalmarch' set to true
                 self:March(true, Table[2], Table[3])
             else
+                -- If not, then just march normally
                 self:March(false, Table[2], Table[3])
             end
         end
@@ -124,11 +135,13 @@ function Grunt:March(FinalMarch: boolean, Duration: number, FractionOfDistance: 
     end)
 end
 
+-- Handles enemy reaching the end of the level
 function Grunt:ReachEnd()
     print("Unit has reached the end. Write heart decrements later.")
     self:Destroy()
 end
 
+-- Applies damage to enemy and returns death status
 function Grunt:TakeDamage(Damage: number)
     --1) Calculate whether unit will be alive after receiving damage
     if self.Health - Damage <= 0 then
@@ -154,9 +167,13 @@ function Grunt:Destroy()
     self.Model:Destroy()
 end
 
+-- Returns enemy's relevant data for external systems
 function Grunt:GetData()
+    -- Returns most relevant data about the enemy
     return self.InfoTable, self.StartTime, self.Health
 end
 
 -- // Return module
+Grunt.TYPE = TYPE
+Grunt.ACTION_LOOP = Settings["ENEMY_DATA"][TYPE]["ACTION_LOOP"]
 return Grunt

@@ -18,12 +18,13 @@ local Saves = {}
 
 -- // Local functions
 
+-- Deep-clone a table so DEFAULT_DATA isn’t mutated
 local function DeepCopy(Table: table)
     local Copy = {}
 
     for k, v in pairs(Table) do
         if type(v) == table then
-            DeepCopy(v)
+            DeepCopy(v) -- recursion on nested tables
         else
             Copy[k] = v
         end
@@ -56,13 +57,14 @@ function Data.Initialize(Player: Player)
 
     Database[Player.Name] = PlayerData
 
-    return PlayerData, NewPlayer
+    return PlayerData, NewPlayer    -- second return value indicates fresh profile
 end
 
 -- Handle setting player's data after changes
 function Data.Set(Player: Player, PlayerData: table)
     Database[Player.Name] = PlayerData
 
+    -- Sync leaderboard folder for UI
     local leaderstats = Player:FindFirstChild("leaderstats")
     if leaderstats then
         for Stat, Value in pairs(PlayerData["leaderstats"]) do
@@ -70,6 +72,7 @@ function Data.Set(Player: Player, PlayerData: table)
         end
     end
 
+    -- Write-frequency guard: only set to save if >60 s since last write
     local TimeOfTransaction = os.time()
     local ToSave
 

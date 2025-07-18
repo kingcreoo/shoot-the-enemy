@@ -14,6 +14,7 @@ local PlayLevelEvent: RemoteEvent = Events:WaitForChild("PlayLevel")
 
 -- // Module functions
 
+-- Creates a LevelSelector object, caches GUI references, and stores colour/image presets
 function LevelSelector.new(Gui, LockedColor, ButtonImages)
     local self = setmetatable({}, LevelSelector)
     self.Gui = Gui
@@ -32,6 +33,7 @@ function LevelSelector.new(Gui, LockedColor, ButtonImages)
     return self
 end
 
+-- Unlocks/locks buttons based on PlayerData + auto-selects the next unplayed level
 function LevelSelector:Update(PlayerData: table)
     for Level, Completed in pairs(PlayerData["Worlds"][self.Gui.Name:gsub("World", "")]) do
         if Level == "Level1" then
@@ -63,6 +65,7 @@ function LevelSelector:Update(PlayerData: table)
     end
 end
 
+-- Highlights the chosen level button, updates info panel text/images
 function LevelSelector:Select(SelectedLevel: string)
     self.SelectedLevel = SelectedLevel
     self.LevelText.Text = SelectedLevel:gsub("(%a+)(%d+)", "%1 %2")
@@ -81,6 +84,7 @@ function LevelSelector:Select(SelectedLevel: string)
     SelectedTween:Play()
 end
 
+-- Connects GUI buttons to selector logic and server play request
 function LevelSelector:WatchDog()
     for _, LevelButton in pairs(self.Levels:GetChildren()) do
         LevelButton.MouseButton1Click:Connect(function()

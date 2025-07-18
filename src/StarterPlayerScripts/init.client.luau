@@ -25,11 +25,14 @@ local PlayPromptDebounce = false
 local CurrentLevel
 
 -- // Functions
+
+-- Builds the level locally when server authorises play
 local function GenerateLevel(World: string, Level: string, Area: string)
     CurrentLevel = LevelControllerModule.new(World, Level, Area)
     CurrentLevel:Initialize()
 end
 
+-- Opens the level selector UI (debounced to 1 call / 2 s)
 local function OpenLevelSelector(WorldName: string)
     if PlayPromptDebounce then return end
 
@@ -41,6 +44,7 @@ local function OpenLevelSelector(WorldName: string)
     OpenFrameBindable:Fire(WorldName, true)
 end
 
+-- Closes the selector UI when player walks away
 local function CloseLevelSelector(WorldName: string)
     CloseFrameBindable:Fire(WorldName)
 end

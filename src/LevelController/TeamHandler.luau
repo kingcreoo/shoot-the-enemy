@@ -14,6 +14,7 @@ local Animations = ReplicatedStorage:WaitForChild("Animations")
 
 -- // Local functions
 
+-- Creates an invisible anchor part the formation can pivot around
 local function CreateCenterPart(LevelModel)
     local CenterPart = Instance.new("Part")
     CenterPart.Size = Vector3.new(1, 1, 1)
@@ -26,6 +27,7 @@ local function CreateCenterPart(LevelModel)
     return CenterPart
 end
 
+-- Clones the chosen skin into the level’s ActiveTeam folder
 local function CreateSoldierModel(TeamFolder, Skin: string)
     local Soldier = ReplicatedStorage:WaitForChild("Skins"):WaitForChild(Skin):Clone()
     Soldier.Parent = TeamFolder
@@ -34,6 +36,7 @@ end
 
 -- // Module functions
 
+-- Returns the X-Z offset vector for this soldier relative to CenterPart
 function TeamHandler:GetSoldierOffset(Soldier)
     for Index, S in ipairs(self.Team) do
         if S == Soldier then
@@ -42,6 +45,7 @@ function TeamHandler:GetSoldierOffset(Soldier)
     end
 end
 
+-- Creates a new soldier, equips weapon + idle anim, then snaps into formation
 function TeamHandler:AddSoldier()
     --1) Create soldier and add to the team table
     local Soldier = CreateSoldierModel(self.TeamFolder, self.Skin)
@@ -58,9 +62,11 @@ function TeamHandler:AddSoldier()
     Joint.Part0 = Soldier:WaitForChild("Right Arm")
     Joint.Part1 = Handle
 
+    -- C0/C1 offsets come straight from Settings.WEAPON_DATA
     Joint.C0 = Settings["WEAPON_DATA"][self.Weapon]["C0"]
     Joint.C1 = Settings["WEAPON_DATA"][self.Weapon]["C1"]
 
+    -- Play idle animation matching the equipped weapon
     local Animator: Animator = Soldier:WaitForChild("AnimationController"):WaitForChild("Animator")
     local IdleAnimation = Animations:WaitForChild(self.Weapon .. "Idle")
     local Track = Animator:LoadAnimation(IdleAnimation)
@@ -70,6 +76,7 @@ function TeamHandler:AddSoldier()
     Soldier:SetPrimaryPartCFrame((self.CenterPart.CFrame + self.Orientations[Index]) * CFrame.Angles(0, math.rad(180), 0))
 end
 
+-- Removes a specific soldier instance from the team and destroys the model
 function TeamHandler:RemoveSoldier(SoldierToRemove)
     for Index, Soldier in ipairs(self.Team) do
         if Soldier == SoldierToRemove then
@@ -80,6 +87,7 @@ function TeamHandler:RemoveSoldier(SoldierToRemove)
     SoldierToRemove:Destroy()
 end
 
+-- Re-positions every soldier so spacing stays even after adds/removes
 function TeamHandler:Align()
     for Index, Soldier in ipairs(self.Team) do
         local TargetCFrame = (self.CenterPart.CFrame + self.Orientations[Index]) * CFrame.Angles(0, math.rad(180), 0)
@@ -94,14 +102,17 @@ function TeamHandler:Align()
     end
 end
 
+-- Swaps every soldier to a new weapon and corresponding idle animation
 function TeamHandler:Equip(NewWeapon: string)
     self.Weapon = NewWeapon
     for _, Soldier in ipairs(self.Team) do
+        -- Destroy old weapon (if any)
         local OldWeapon = Soldier:FindFirstChild("Weapon")
         if OldWeapon then
             OldWeapon:Destroy()
         end
 
+        -- Stop any existing idle tracks
         local Animator: Animator = Soldier:WaitForChild("AnimationController"):WaitForChild("Animator")
         local PlayingAnimations = Animator:GetPlayingAnimationTracks()
         for _, Animation in pairs(PlayingAnimations) do
@@ -110,6 +121,7 @@ function TeamHandler:Equip(NewWeapon: string)
             end
         end
 
+        -- Attach the new weapon + idle animation
         local SoldierWeapon = ReplicatedStorage:WaitForChild("Weapons"):WaitForChild(self.Weapon):Clone()
         SoldierWeapon.Parent = Soldier
         SoldierWeapon.Name = "Weapon"
@@ -128,6 +140,7 @@ function TeamHandler:Equip(NewWeapon: string)
     end
 end
 
+-- Constructor: sets up formation, center part, and starting soldiers
 function TeamHandler.new(World: string, Level: string, LevelModel: Model, SelectedSkin: string)
     local self = setmetatable({}, TeamHandler)
 

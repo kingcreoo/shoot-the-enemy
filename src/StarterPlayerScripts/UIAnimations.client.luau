@@ -1,3 +1,4 @@
+local TweenService = game:GetService("TweenService")
 -- // UI animations, written by KingCreoo on 5-26-2025
 -- // Handles UI animations :)
 
@@ -8,6 +9,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Lighting: Lighting = game:GetService("Lighting")
 
+-- Bindables for cross-script UI control
 local Bindables = ReplicatedStorage:WaitForChild("Bindables")
 local GameLoadedBindable: BindableEvent = Bindables:WaitForChild("GameLoaded")
 local OpenFrameBindable: BindableEvent = Bindables:WaitForChild("OpenFrame")
@@ -17,11 +19,14 @@ local CloseHUDBindable: BindableEvent = Bindables:WaitForChild("CloseHUD")
 local LocalPlayer = Players.LocalPlayer
 local LocalGui: PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
+-- Screen-wide blur toggle when frames open
 local GUIBlur: BlurEffect = Lighting:WaitForChild("GUIBlur")
 local BlurOn = false
 
+-- Tween preset used whenever a frame opens
 local OpenInfo = TweenInfo.new(.2, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut)
 
+-- Emoji list for rotating store icon
 local StoreEmojis = {
     "rbxassetid://104230400329278",
     "rbxassetid://115845499094871",
@@ -30,13 +35,13 @@ local StoreEmojis = {
     "rbxassetid://137193933072710"
 }
 
-
 -- // Defining our GUI
 local HUD: ScreenGui = LocalGui:WaitForChild("HUD")
 local FramesGui: ScreenGui = LocalGui:WaitForChild("Frames")
 
 local TactileWorldFrame: Frame = FramesGui:WaitForChild("TactileWorld")
 
+-- HUD containers / buttons
 local StatsDisplay: Folder = HUD:WaitForChild("StatsDisplay")
 local SideMenu: Folder = HUD:WaitForChild("SideMenu")
 local BottomMenu: Folder = HUD:WaitForChild("BottomMenu")
@@ -53,22 +58,26 @@ local UpgradesContainer: Frame = SideMenu:WaitForChild("UpgradesContainer")
 local SettingsButton: ImageButton = BottomMenu:WaitForChild("Settings")
 local CodesButton: ImageButton = BottomMenu:WaitForChild("Codes")
 
+-- Groupings for animation routines
 local HUDElements = {CodesButton, SettingsButton, OpsContainer, SkinsContainer, UpgradesContainer, QuestsContainer, StoreContainer, GemContainer, GoldContainer}
 local HUDButtonsOscillation = {CodesButton, SettingsButton, OpsContainer, SkinsContainer, UpgradesContainer, QuestsContainer}
 local HUDButtonsPulse = {StoreContainer}
 local HUDButtonsSideOscillation = {GoldContainer, GemContainer}
 
-local HUDOpen = nil
+local HUDOpen = nil                               -- true/false/nil for HUD visibility
 
 local Frames = {["TactileWorld"] = TactileWorldFrame}
-local ActiveFrame = nil
+local ActiveFrame = nil                           -- currently open pop-up frame
 
 -- // Functions
+
+-- Pulls current currency values into HUD labels
 local function UpdateStats()
     GoldContainer:WaitForChild("TextLabel").Text = LocalPlayer:WaitForChild("leaderstats"):WaitForChild("Gold").Value
     GemContainer:WaitForChild("TextLabel").Text = LocalPlayer:WaitForChild("leaderstats"):WaitForChild("Gems").Value
 end
 
+-- Sequentially pops each HUD element (slow version used after load)
 local function OpenHUD()
     for _, Element in pairs(HUDElements) do
         Element.Size = UDim2.new(0,0,0,0)
@@ -88,8 +97,8 @@ local function OpenHUD()
     end
 end
 
+-- Faster version for reopening HUD after closing a frame
 local function OpenHUDFast()
-    print('open')
     for _, Element in pairs(HUDElements) do
         Element.Size = UDim2.new(0,0,0,0)
     end
@@ -108,6 +117,7 @@ local function OpenHUDFast()
     end
 end
 
+-- Shrinks all HUD buttons out before hiding
 local function CloseHUD()
     HUDOpen = false
 
@@ -122,6 +132,7 @@ local function CloseHUD()
     end
 end
 
+-- Closes whichever frame is active (or a specific one) + optional HUD/blur control
 local function CloseFrame(FrameString: string, ForceClose: boolean, ToCloseHUD: boolean)
     local FrameToClose
     if FrameString then
@@ -161,6 +172,7 @@ local function CloseFrame(FrameString: string, ForceClose: boolean, ToCloseHUD: 
     end
 end
 
+-- Opens a named frame with blur + optional HUD closing
 local function OpenFrame(FrameString: string, ToCloseHUD: boolean, Force: boolean)
     if ActiveFrame ~= nil and not Force then return end
     if ActiveFrame == FrameString then return end
@@ -179,7 +191,6 @@ local function OpenFrame(FrameString: string, ToCloseHUD: boolean, Force: boolea
 
     if ToCloseHUD then
         if not HUDOpen then return end
-
         task.spawn(function()
             CloseHUD()
         end)
@@ -197,38 +208,33 @@ local function OpenFrame(FrameString: string, ToCloseHUD: boolean, Force: boolea
 end
 
 -- // Animations
-
--- Oscillation & enter animation
+-- Hover oscillation for main HUD buttons
 for _, Target in pairs(HUDButtonsOscillation) do
-    -- Size settings
+    -- Size and rotation tweens set up once per button
     local OriginalSize = Target.Size
     local HoverSize = OriginalSize + UDim2.new(0, 10, 0, 10)
     local SizeTweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
     local GrowTween = TweenService:Create(Target, SizeTweenInfo, {Size = HoverSize})
     local ShrinkTween = TweenService:Create(Target, SizeTweenInfo, {Size = OriginalSize})
 
-    -- Rotation oscillation
-    local RotationAmplitude = 8 -- degrees
-    local RotationTime = .75   -- time per half swing
+    -- Rotation oscillation setup
+    local RotationAmplitude = 8
+    local RotationTime = .75
     local CurrentTween = nil
     local IsHovering = false
 
+    -- Starts endless left-right rotation
     local function StartOscillation()
         local Direction = 1
 
-        local FirstTween = TweenService:Create(Target, TweenInfo.new(RotationTime / 2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-            Rotation = RotationAmplitude
-        })
+        local FirstTween = TweenService:Create(Target, TweenInfo.new(RotationTime / 2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Rotation = RotationAmplitude})
 
         FirstTween.Completed:Connect(function()
             if IsHovering then
                 Direction = -1
-
                 local function CreateOscillationTween()
                     local TargetRotation = RotationAmplitude * Direction
-                    local Tween = TweenService:Create(Target, TweenInfo.new(RotationTime, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-                        Rotation = TargetRotation
-                    })
+                    local Tween = TweenService:Create(Target, TweenInfo.new(RotationTime, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Rotation = TargetRotation})
 
                     Tween.Completed:Connect(function()
                         if IsHovering then
@@ -237,10 +243,8 @@ for _, Target in pairs(HUDButtonsOscillation) do
                             CurrentTween:Play()
                         end
                     end)
-
                     return Tween
                 end
-
                 CurrentTween = CreateOscillationTween()
                 CurrentTween:Play()
             end
@@ -252,14 +256,8 @@ for _, Target in pairs(HUDButtonsOscillation) do
 
     local function StopOscillation()
         IsHovering = false
-
-        if CurrentTween then
-            CurrentTween:Cancel()
-            CurrentTween = nil
-        end
-
-        local ResetTween = TweenService:Create(Target, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {Rotation = 0})
-        ResetTween:Play()
+        if CurrentTween then CurrentTween:Cancel() CurrentTween = nil end
+        TweenService:Create(Target, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {Rotation = 0}):Play()
     end
 
     -- Hover events
@@ -269,47 +267,37 @@ for _, Target in pairs(HUDButtonsOscillation) do
         GrowTween:Play()
         StartOscillation()
     end)
-
     Target.MouseLeave:Connect(function()
         ShrinkTween:Play()
         StopOscillation()
     end)
 end
 
--- Side oscillation & enter animation
-
+-- Side oscillation for gold / gem counters
 for _, SelectTarget in pairs(HUDButtonsSideOscillation) do
     local Target: ImageLabel = SelectTarget:WaitForChild("Icon")
 
-    -- Size settings
     local OriginalSize = Target.Size
     local HoverSize = OriginalSize + UDim2.new(0, 10, 0, 10)
     local SizeTweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
     local GrowTween = TweenService:Create(Target, SizeTweenInfo, {Size = HoverSize})
     local ShrinkTween = TweenService:Create(Target, SizeTweenInfo, {Size = OriginalSize})
 
-    -- Rotation oscillation
-    local RotationAmplitude = 8 -- degrees
-    local RotationTime = .75   -- time per half swing
+    local RotationAmplitude = 8
+    local RotationTime = .75
     local CurrentTween = nil
     local IsHovering = false
 
     local function StartOscillation()
         local Direction = 1
-
-        local FirstTween = TweenService:Create(Target, TweenInfo.new(RotationTime / 2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-            Rotation = RotationAmplitude
-        })
+        local FirstTween = TweenService:Create(Target, TweenInfo.new(RotationTime / 2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Rotation = RotationAmplitude})
 
         FirstTween.Completed:Connect(function()
             if IsHovering then
                 Direction = -1
-
                 local function CreateOscillationTween()
                     local TargetRotation = RotationAmplitude * Direction
-                    local Tween = TweenService:Create(Target, TweenInfo.new(RotationTime, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-                        Rotation = TargetRotation
-                    })
+                    local Tween = TweenService:Create(Target, TweenInfo.new(RotationTime, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Rotation = TargetRotation})
 
                     Tween.Completed:Connect(function()
                         if IsHovering then
@@ -318,10 +306,8 @@ for _, SelectTarget in pairs(HUDButtonsSideOscillation) do
                             CurrentTween:Play()
                         end
                     end)
-
                     return Tween
                 end
-
                 CurrentTween = CreateOscillationTween()
                 CurrentTween:Play()
             end
@@ -333,14 +319,8 @@ for _, SelectTarget in pairs(HUDButtonsSideOscillation) do
 
     local function StopOscillation()
         IsHovering = false
-
-        if CurrentTween then
-            CurrentTween:Cancel()
-            CurrentTween = nil
-        end
-
-        local ResetTween = TweenService:Create(Target, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {Rotation = 0})
-        ResetTween:Play()
+        if CurrentTween then CurrentTween:Cancel() CurrentTween = nil end
+        TweenService:Create(Target, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {Rotation = 0}):Play()
     end
 
     -- Hover events
@@ -350,68 +330,48 @@ for _, SelectTarget in pairs(HUDButtonsSideOscillation) do
         GrowTween:Play()
         StartOscillation()
     end)
-
     SelectTarget.MouseLeave:Connect(function()
         ShrinkTween:Play()
         StopOscillation()
     end)
 end
 
--- Pulse & enter animation
+-- Pulse animation for store button
 for _, Target in pairs(HUDButtonsPulse) do
-    -- Original size (assuming original scale is 0.15 for X and Y, offset is 0)
-    local OriginalScaleX = 0.15
-    local OriginalScaleY = 0.15
+    -- Original size recorded as scale for responsive UIs
+    local OriginalScaleX, OriginalScaleY = 0.15, 0.15
     local OriginalSize = UDim2.new(OriginalScaleX, 0, OriginalScaleY, 0)
-
-    -- Pulse size adds 10 pixels offset on both axes (you can adjust)
     local PulseSize = UDim2.new(OriginalScaleX, 10, OriginalScaleY, 10)
 
     local PulseTweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
     local ShrinkTweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
-    local PulseTween = nil
-    local ShrinkTween = nil
-    local IsHovering = false
+    local PulseTween, ShrinkTween, IsHovering = nil, nil, false
 
     local function StartPulse()
-        if PulseTween then
-            PulseTween:Cancel()
-            PulseTween = nil
-        end
+        if PulseTween then PulseTween:Cancel() end
         PulseTween = TweenService:Create(Target, PulseTweenInfo, {Size = PulseSize})
         PulseTween:Play()
     end
-
     local function StopPulse()
-        if PulseTween then
-            PulseTween:Cancel()
-            PulseTween = nil
-        end
-        -- Start a smooth shrink tween back to original size
-        if ShrinkTween then
-            ShrinkTween:Cancel()
-            ShrinkTween = nil
-        end
+        if PulseTween then PulseTween:Cancel() PulseTween = nil end
+        if ShrinkTween then ShrinkTween:Cancel() end
         ShrinkTween = TweenService:Create(Target, ShrinkTweenInfo, {Size = OriginalSize})
         ShrinkTween:Play()
     end
 
-    -- Hover events
     Target.MouseEnter:Connect(function()
         if IsHovering then return end
         IsHovering = true
         StartPulse()
     end)
-
     Target.MouseLeave:Connect(function()
         IsHovering = false
         StopPulse()
     end)
-
 end
 
--- Rotate icons for store animation
+-- Rotates store icon through emoji list every ~20 s
 task.spawn(function()
     local Index = 2
     while true do
@@ -421,16 +381,15 @@ task.spawn(function()
         StoreContainer:WaitForChild("ImageLabel").Image = StoreEmojis[Index]
         TweenService:Create(StoreContainer:WaitForChild("ImageLabel"), TweenInfo.new(1.5), {ImageTransparency = 0}):Play()
 
-        Index = Index % #StoreEmojis +1
+        Index = Index % #StoreEmojis + 1
         task.wait(20)
     end
 end)
 
--- Idle side menu animation
+-- Idle “pop” animation across all HUD buttons every 60 s
 task.spawn(function()
     while true do
         task.wait(60)
-
         if not HUDOpen then continue end
 
         for _, Element in pairs(HUDElements) do
@@ -438,15 +397,11 @@ task.spawn(function()
             local OriginSize = Element:GetAttribute("Size")
             local NewSize = OriginSize + UDim2.new(0,25,0,25)
 
-            local ScaleTween = TweenService:Create(Element, TweenInfo.new(.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = NewSize})
-            ScaleTween:Play()
+            TweenService:Create(Element, TweenInfo.new(.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = NewSize}):Play()
 
             task.delay(.15, function()
-                local ReturnTween = TweenService:Create(Element, TweenInfo.new(.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = OriginSize})
-                ReturnTween:Play()
+                TweenService:Create(Element, TweenInfo.new(.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = OriginSize}):Play()
             end)
-
-            continue
         end
     end
 end)
@@ -456,6 +411,8 @@ GameLoadedBindable.Event:Connect(OpenHUD)
 OpenFrameBindable.Event:Connect(OpenFrame)
 CloseFrameBindable.Event:Connect(CloseFrame)
 CloseHUDBindable.Event:Connect(CloseHUD)
+
+-- Re-render currency when leaderstat values change
 for _, Value in pairs(LocalPlayer:WaitForChild("leaderstats"):GetChildren()) do
     Value.Changed:Connect(UpdateStats)
 end
