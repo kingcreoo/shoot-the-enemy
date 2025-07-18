@@ -67,5 +67,22 @@ SETTINGS.LEVEL_DATA = {
     }
 }
 
+SETTINGS.ENEMY_DATA = {
+    ["Grunt"] = {
+        ["MovementMode"] = "Straightline",
+        ["HitboxRadius"] = 2,
+        ["Weapon"] = "M4",
+        ["Health"] = 3,
+        ["ACTION_LOOP"] = {
+            [1] = {"March", 22, 1}
+        },
+        ["TotalDuration"] = 22,
+        ["Animations"] = {
+            ["Weapon"] = "M4Idle",
+            ["March"] = "M4March"
+        }
+    }
+}
+
 -- // Return module
 return SETTINGS

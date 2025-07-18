@@ -1,16 +1,6 @@
 -- // Grunt enemy module written by KingCreoo on 7-5-2025
 
--- STATS
-local HEALTH = 3
-local WEAPON = "M4"
-
-local ACTION_LOOP = {
-    [1] = {"March", 22, 1}
-}
-
--- ANIMATIONS
-local WEAPON_ANIMATION = "M4Idle"
-local MARCH_ANIMATION = "M4March"
+local TYPE = "Grunt"
 
 -- // Define module
 local Grunt = {}
@@ -25,18 +15,24 @@ local Settings = require(ReplicatedStorage:WaitForChild("Settings"))
 
 -- // Module functions
 function Grunt.new(Model: Model, LevelModel: Model, InfoTable: table)
+    --1) Set metatable
     local self = setmetatable({}, Grunt)
+
+    --2) Go about setting variables for later use
     self.Model = Model
     self.LevelModel = LevelModel
     self.InfoTable = InfoTable
 
-    self.MovementMode = "Straightline"
-    self.HitboxRadius = 2
+    self.MovementMode = Settings["ENEMY_DATA"][TYPE]["MovementMode"]
+    self.HitboxRadius = Settings["ENEMY_DATA"][TYPE]["HitboxRadius"]
+    self.Health = Settings["ENEMY_DATA"][TYPE]["Health"]
+    self.Weapon = Settings["ENEMY_DATA"][TYPE]["Weapon"]
+    self.TotalDuration = Settings["ENEMY_DATA"][TYPE]["TotalDuration"]
 
-    self.Health = HEALTH
+    self.ACTION_LOOP = Settings["ENEMY_DATA"][TYPE]["ACTION_LOOP"]
+    self.Animations = Settings["ENEMY_DATA"][TYPE]["Animations"]
+
     self.Animator = self.Model:WaitForChild("AnimationController"):WaitForChild("Animator")
-
-    self.TotalDuration = 22
 
     task.delay(InfoTable[2], function()
         self.StartTime = os.time()
@@ -52,7 +48,7 @@ function Grunt:Spawn()
     self.Model:SetPrimaryPartCFrame(self.LevelModel:WaitForChild("Spawn" .. tostring(self.InfoTable[3])).CFrame + self.InfoTable[4])
 
     --2) Set unit weapon and health
-    local NewWeapon = ReplicatedStorage:WaitForChild("Weapons"):WaitForChild(WEAPON):Clone()
+    local NewWeapon = ReplicatedStorage:WaitForChild("Weapons"):WaitForChild(self.Weapon):Clone()
     NewWeapon.Parent = self.Model
     NewWeapon.Name = "Weapon"
     local Handle = NewWeapon:WaitForChild("Handle")
@@ -61,12 +57,12 @@ function Grunt:Spawn()
     Joint.Part0 = self.Model:WaitForChild("Right Arm")
     Joint.Part1 = Handle
 
-    Joint.C0 = Settings["WEAPON_DATA"][WEAPON]["C0"]
-    Joint.C1 = Settings["WEAPON_DATA"][WEAPON]["C1"]
+    Joint.C0 = Settings["WEAPON_DATA"][self.Weapon]["C0"]
+    Joint.C1 = Settings["WEAPON_DATA"][self.Weapon]["C1"]
 
     local UnitHealth = Instance.new("IntValue")
     UnitHealth.Name = "Health"
-    UnitHealth.Value = HEALTH
+    UnitHealth.Value = self.Weapon
     UnitHealth.Parent = self.Model
 
     --3) Run spawn animation
@@ -78,12 +74,12 @@ function Grunt:Spawn()
 end
 
 function Grunt:ActionLoop()
-    for Index, Table in ipairs(ACTION_LOOP) do
+    for Index, Table in ipairs(self.ACTION_LOOP) do
         if self.Destroyed then
             return
         end
         if Table[1] == "March" then
-            if Index == #ACTION_LOOP then
+            if Index == #self.ACTION_LOOP then
                 self:March(true, Table[2], Table[3])
             else
                 self:March(false, Table[2], Table[3])
@@ -100,11 +96,11 @@ function Grunt:March(FinalMarch: boolean, Duration: number, FractionOfDistance: 
     end
 
     --1) Get animator & play the unit's marching track
-    local MarchTrack = self.Animator:LoadAnimation(Animations:WaitForChild(MARCH_ANIMATION))
+    local MarchTrack = self.Animator:LoadAnimation(Animations:WaitForChild(self.Animations["March"]))
     MarchTrack:Play()
 
     --2) Play the weapon's marching track
-    local WeaponTrack = self.Animator:LoadAnimation(Animations:WaitForChild(WEAPON_ANIMATION))
+    local WeaponTrack = self.Animator:LoadAnimation(Animations:WaitForChild(self.Animations["Weapon"]))
     WeaponTrack:Play()
 
     --3) Create and play a tween that moves the unit along
@@ -163,5 +159,4 @@ function Grunt:GetData()
 end
 
 -- // Return module
-Grunt.ACTION_LOOP = ACTION_LOOP
 return Grunt
